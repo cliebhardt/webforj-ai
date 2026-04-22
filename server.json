@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "com.webforj/mcp",
+  "title": "webforJ MCP Server",
+  "description": "The webforJ MCP server brings webforJ documentation, project scaffolding, and theme generation into your AI workflow.",
+  "repository": {
+    "url": "https://github.com/webforj/webforj-ai",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.webforj.com/mcp"
+    }
+  ]
+}

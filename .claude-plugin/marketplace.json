@@ -1,0 +1,19 @@
+{
+  "name": "webforj-ai",
+  "owner": {
+    "name": "BASIS International Ltd",
+    "url": "https://webforj.com"
+  },
+  "metadata": {
+    "description": "AI plugins for webforJ: MCP server and Skills for building applications with AI assistance.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "webforj",
+      "source": "./",
+      "version": "0.1.0",
+      "description": "webforJ MCP server and Skills for AI-assisted development."
+    }
+  ]
+}
