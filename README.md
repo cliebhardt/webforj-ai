@@ -420,6 +420,59 @@ cp -R webforj-ai/skills/* ~/.junie/skills/
 </details>
 
 <details>
+<summary><b>Antigravity (Google)</b></summary>
+
+**Install the MCP server**
+
+Add to `~/.gemini/antigravity/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "webforj-mcp": {
+      "serverUrl": "https://mcp.webforj.com/mcp"
+    }
+  }
+}
+```
+
+Or via the UI: Agent pane -> **MCP Servers** -> Install a server -> paste
+the URL.
+
+**Install the skills**
+
+Antigravity reads skills from `~/.gemini/antigravity/skills/` (global) or
+`<workspace-root>/.agents/skills/` (workspace). Clone this repo and copy
+the skill folders:
+
+```bash
+git clone https://github.com/webforj/webforj-ai.git
+mkdir -p ~/.gemini/antigravity/skills
+cp -R webforj-ai/skills/* ~/.gemini/antigravity/skills/
+```
+
+**Update**
+
+- MCP server: remote URL, always serves the latest. No action needed.
+- Skills:
+
+  ```bash
+  cd webforj-ai && git pull
+  cp -R skills/* ~/.gemini/antigravity/skills/
+  ```
+
+**Uninstall**
+
+- MCP server: remove the `webforj-mcp` entry from `~/.gemini/antigravity/mcp_config.json`.
+- Skills:
+
+  ```bash
+  rm -rf ~/.gemini/antigravity/skills/webforj-*
+  ```
+
+</details>
+
+<details>
 <summary><b>Other MCP Clients</b></summary>
 
 **Install**
