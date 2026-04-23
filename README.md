@@ -181,6 +181,165 @@ gemini extensions uninstall webforj
 </details>
 
 <details>
+<summary><b>Kiro</b></summary>
+
+**Install the MCP server**
+
+Add to `~/.kiro/settings/mcp.json` (user scope) or
+`.kiro/settings/mcp.json` (workspace scope):
+
+```json
+{
+  "mcpServers": {
+    "webforj-mcp": {
+      "type": "http",
+      "url": "https://mcp.webforj.com/mcp"
+    }
+  }
+}
+```
+
+**Install the skills**
+
+Kiro reads skills from `~/.kiro/skills/<skill-name>/` (global) or
+`.kiro/skills/<skill-name>/` (workspace). Clone this repo and copy the
+skill folders:
+
+```bash
+git clone https://github.com/webforj/webforj-ai.git
+mkdir -p ~/.kiro/skills
+cp -R webforj-ai/skills/* ~/.kiro/skills/
+```
+
+Or import via Kiro IDE: Agent Steering & Skills section → **+** →
+**Import a skill** → **GitHub**, then paste a URL pointing to a skill's
+subdirectory in this repo.
+
+**Update**
+
+- MCP server: remote URL, always serves the latest. No action needed.
+- Skills:
+
+  ```bash
+  cd webforj-ai && git pull
+  cp -R skills/* ~/.kiro/skills/
+  ```
+
+**Uninstall**
+
+- MCP server: remove the `webforj-mcp` entry from `~/.kiro/settings/mcp.json`.
+- Skills:
+
+  ```bash
+  rm -rf ~/.kiro/skills/webforj-*
+  ```
+
+</details>
+
+<details>
+<summary><b>Goose</b></summary>
+
+**Install the MCP server**
+
+Run Goose's interactive configure command and add a remote HTTP
+extension:
+
+```bash
+goose configure
+```
+
+Select `Add Extension` → `Remote Extension (Streamable HTTP)`. When
+prompted:
+
+- Name: `webforj-mcp`
+- Streamable HTTP endpoint URI: `https://mcp.webforj.com/mcp`
+
+**Install the skills**
+
+Goose loads skills from `.goose/skills/` (project), `.agents/skills/`
+(portable project), or `~/.config/agents/skills/` (global). Clone this
+repo and copy the skill folders:
+
+```bash
+git clone https://github.com/webforj/webforj-ai.git
+mkdir -p ~/.config/agents/skills
+cp -R webforj-ai/skills/* ~/.config/agents/skills/
+```
+
+**Update**
+
+- MCP server: remote URL, always serves the latest. No action needed.
+- Skills:
+
+  ```bash
+  cd webforj-ai && git pull
+  cp -R skills/* ~/.config/agents/skills/
+  ```
+
+**Uninstall**
+
+- MCP server: run `goose configure`, select `Remove Extension`, choose
+  `webforj-mcp`.
+- Skills:
+
+  ```bash
+  rm -rf ~/.config/agents/skills/webforj-*
+  ```
+
+</details>
+
+<details>
+<summary><b>Junie (JetBrains)</b></summary>
+
+**Install the MCP server**
+
+Add to `~/.junie/mcp/mcp.json` (user scope) or `.junie/mcp/mcp.json`
+(project scope):
+
+```json
+{
+  "mcpServers": {
+    "webforj-mcp": {
+      "url": "https://mcp.webforj.com/mcp"
+    }
+  }
+}
+```
+
+**Install the skills**
+
+Junie reads skills from `~/.junie/skills/<skill-name>/` (user scope) or
+`<projectRoot>/.junie/skills/<skill-name>/` (project scope). Clone this
+repo and copy the skill folders:
+
+```bash
+git clone https://github.com/webforj/webforj-ai.git
+mkdir -p ~/.junie/skills
+cp -R webforj-ai/skills/* ~/.junie/skills/
+```
+
+**Update**
+
+- MCP server: remote URL, always serves the latest. No action needed.
+- Skills:
+
+  ```bash
+  cd webforj-ai && git pull
+  cp -R skills/* ~/.junie/skills/
+  ```
+
+**Uninstall**
+
+- MCP server: remove the `webforj-mcp` entry from `~/.junie/mcp/mcp.json`.
+- Skills:
+
+  ```bash
+  rm -rf ~/.junie/skills/webforj-*
+  ```
+
+</details>
+
+<details>
 <summary><b>VS Code + GitHub Copilot</b></summary>
 
 Requires GitHub Copilot enabled on your account. VS Code supports both
@@ -264,8 +423,6 @@ connect. Add this to your client's MCP configuration:
 }
 ```
 
-For skills, see [Skills in other clients](#skills-in-other-clients).
-
 **Update**
 
 The MCP server is remote — no action needed.
@@ -295,31 +452,6 @@ MCP tools work automatically in every client:
 - *"Scaffold a new webforJ sidemenu project called CustomerPortal."* (uses `webforj-create-project`)
 - *"Generate a theme from brand color #6366f1."* (uses `webforj-create-theme`)
 - *"Search webforJ docs for @Route annotation and navigation."* (uses `webforj-knowledge-base`)
-
-## Skills in other clients
-
-Beyond the clients listed above, the skills follow the
-[Agent Skills](https://agentskills.io) open standard and work in many
-more AI coding tools: **Cursor**, **Junie** (JetBrains), **OpenCode**,
-**Goose**, **Amp**, **Kiro**, and others. See
-[agentskills.io](https://agentskills.io) for the full list.
-
-<details>
-<summary>Per-client skill install pointers</summary>
-
-Installation differs per client. The common path is:
-
-1. Clone this repo or copy the `skills/` directory into your project or
-   skills folder.
-2. Follow your client's skills documentation to register them.
-
-- [Cursor](https://cursor.com/docs/context/skills)
-- [Junie](https://junie.jetbrains.com/docs/agent-skills.html)
-- [OpenCode](https://opencode.ai/docs/skills/)
-- [Goose](https://block.github.io/goose/docs/guides/context-engineering/using-skills/)
-- [Kiro](https://kiro.dev/docs/skills/)
-
-</details>
 
 ## License
 
