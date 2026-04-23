@@ -25,12 +25,12 @@ if (!SEMVER.test(newVersion)) {
 
 // Each entry: [relativeFile, [...jsonPaths]] — every path is a dotted json field to set to newVersion.
 const targets = [
-  [".claude-plugin/plugin.json",      ["version"]],
-  [".claude-plugin/marketplace.json", ["metadata.version", "plugins.0.version"]],
-  [".github/plugin/plugin.json",      ["version"]],
-  [".codex-plugin/plugin.json",       ["version"]],
-  ["gemini-extension.json",           ["version"]],
-  ["server.json",                     ["version"]],
+  [".claude-plugin/plugin.json",                      ["version"]],
+  [".claude-plugin/marketplace.json",                 ["metadata.version", "plugins.0.version"]],
+  [".github/plugin/plugin.json",                      ["version"]],
+  ["plugins/webforj/.codex-plugin/plugin.json",       ["version"]],
+  ["gemini-extension.json",                           ["version"]],
+  ["server.json",                                     ["version"]],
 ];
 
 function setDottedPath(obj, path, value) {

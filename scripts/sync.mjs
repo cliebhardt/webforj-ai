@@ -19,7 +19,6 @@ const plugins = [
     name: "webforj",
     // Each [srcRelRoot, destRelPluginRoot] is a file or directory to mirror.
     mirror: [
-      [".codex-plugin",  ".codex-plugin"],
       [".mcp.json",      ".mcp.json"],
       ["skills",         "skills"],
     ],

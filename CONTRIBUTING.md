@@ -9,9 +9,11 @@ the source.
 - `skills/` is the single place to edit skill content. Claude Code,
   Copilot CLI, Gemini CLI, and VS Code all read from here directly.
 - `.mcp.json` is the single place to define the MCP server connection.
-- All per-client plugin manifests at the repo root (`.claude-plugin/`,
-  `.github/plugin/`, `.codex-plugin/`, `gemini-extension.json`) are
-  authored directly and do not duplicate each other.
+- Per-client plugin manifests live at the path each client expects:
+  `.claude-plugin/` (Claude Code), `.github/plugin/` (Copilot CLI),
+  `gemini-extension.json` (Gemini CLI) at the repo root, and
+  `plugins/webforj/.codex-plugin/` (Codex, subdirectory required).
+  Each is authored directly; they do not duplicate each other.
 
 ### Why `plugins/webforj/` exists
 
@@ -19,10 +21,14 @@ Codex CLI requires each plugin to be a self-contained subdirectory
 under a marketplace root. Other clients (Claude Code, Copilot CLI,
 Gemini CLI) read their manifests from the repo root directly.
 
-`plugins/webforj/` is a physical copy of the Codex-relevant files
-(`.codex-plugin/`, `.mcp.json`, `skills/`) so Codex finds the plugin
-where it expects. **Do not edit inside `plugins/webforj/` directly.**
-It is a rebuild artifact produced by `scripts/sync.mjs`.
+`plugins/webforj/` holds the Codex plugin bundle:
+
+- `plugins/webforj/.codex-plugin/plugin.json` is the source of truth
+  for the Codex plugin manifest. Edit it directly when you need to
+  change Codex-specific fields.
+- `plugins/webforj/.mcp.json` and `plugins/webforj/skills/` are
+  **rebuild artifacts** produced by `scripts/sync.mjs`. Never edit
+  these — edit the root versions and run sync.
 
 ## Common Tasks
 
@@ -69,9 +75,10 @@ edits needed.
    node scripts/bump.mjs 0.2.0
    ```
 
-   This updates all 6 root manifest locations AND auto-runs
-   `sync.mjs` to propagate the bumped `.codex-plugin/plugin.json`
-   into `plugins/webforj/`.
+   This updates the `version` field in every manifest that carries one
+   (Claude, Copilot, Gemini, Codex, server.json, marketplace.json) and
+   auto-runs `sync.mjs` to mirror root `.mcp.json` and `skills/` into
+   `plugins/webforj/`.
 
 3. Commit and tag:
 
