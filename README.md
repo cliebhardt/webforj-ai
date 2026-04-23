@@ -63,6 +63,33 @@ Update later:
 copilot plugin update webforj
 ```
 
+### Gemini CLI
+
+Install the extension directly from GitHub. This registers both the MCP
+server and the skills in one command:
+
+```bash
+gemini extensions install https://github.com/webforj/webforj-ai
+```
+
+Verify:
+
+```bash
+gemini extensions list
+```
+
+Update later:
+
+```bash
+gemini extensions update webforj
+```
+
+Uninstall:
+
+```bash
+gemini extensions uninstall webforj
+```
+
 ### VS Code with GitHub Copilot (Agent mode)
 
 Requires GitHub Copilot enabled on your account.
@@ -187,6 +214,12 @@ claude mcp remove webforj-mcp
 ```bash
 copilot plugin uninstall webforj
 copilot plugin marketplace remove webforj-ai
+```
+
+### Gemini CLI
+
+```bash
+gemini extensions uninstall webforj
 ```
 
 ## License
