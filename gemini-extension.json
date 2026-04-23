@@ -1,7 +1,7 @@
 {
   "name": "webforj",
   "version": "0.1.0",
-  "description": "webforJ MCP server and Skills for building webforJ applications with AI.",
+  "description": "Plugin that includes the webforJ MCP server and Skills for building webforJ applications with AI.",
   "mcpServers": {
     "webforj-mcp": {
       "httpUrl": "https://mcp.webforj.com/mcp"

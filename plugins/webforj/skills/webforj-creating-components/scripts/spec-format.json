@@ -1,0 +1,185 @@
+{
+  "tag": "x-dialog",
+  "className": "XDialog",
+  "description": "",
+  "properties": [
+    {
+      "name": "modal",
+      "type": "string",
+      "description": "Exposes the internal modal utility that controls focus trapping. To temporarily disable focus trapping and allow third-party modals spawned from an active modal, call `modal.activateExternal()` when the third-party modal opens. Upon closing, call `modal.deactivateExternal()` to restore focus trapping.",
+      "default": "new Modal(this)"
+    },
+    {
+      "name": "dialog",
+      "type": "HTMLElement",
+      "description": ""
+    },
+    {
+      "name": "panel",
+      "type": "HTMLElement",
+      "description": ""
+    },
+    {
+      "name": "overlay",
+      "type": "HTMLElement",
+      "description": ""
+    },
+    {
+      "name": "open",
+      "type": "boolean",
+      "description": "Indicates whether or not the dialog is open. You can toggle this attribute to show and hide the dialog, or you can\nuse the `show()` and `hide()` methods and this attribute will reflect the dialog's open state.",
+      "default": "false",
+      "attribute": "open"
+    },
+    {
+      "name": "label",
+      "type": "string",
+      "description": "The dialog's label as displayed in the header. You should always include a relevant label even when using\n`no-header`, as it is required for proper accessibility. If you need to display HTML, use the `label` slot instead.",
+      "default": "''",
+      "attribute": "label"
+    },
+    {
+      "name": "noHeader",
+      "type": "boolean",
+      "description": "Disables the header. This will also remove the default close button, so please ensure you provide an easy,\naccessible way for users to dismiss the dialog.",
+      "default": "false",
+      "attribute": "no-header"
+    }
+  ],
+  "events": [
+    {
+      "name": "x-show",
+      "type": "CustomEvent",
+      "detail": null,
+      "description": "Emitted when the dialog opens."
+    },
+    {
+      "name": "x-after-show",
+      "type": "CustomEvent",
+      "detail": null,
+      "description": "Emitted after the dialog opens and all animations are complete."
+    },
+    {
+      "name": "x-hide",
+      "type": "CustomEvent",
+      "detail": null,
+      "description": "Emitted when the dialog closes."
+    },
+    {
+      "name": "x-after-hide",
+      "type": "CustomEvent",
+      "detail": null,
+      "description": "Emitted after the dialog closes and all animations are complete."
+    },
+    {
+      "name": "x-initial-focus",
+      "type": "CustomEvent",
+      "detail": null,
+      "description": "Emitted when the dialog opens and is ready to receive focus. Calling `event.preventDefault()` will prevent focusing and allow you to set it on a different element, such as an input."
+    },
+    {
+      "name": "x-request-close",
+      "type": "CustomEvent<{ source: 'close-button' | 'keyboard' | 'overlay' }>",
+      "detail": "CustomEvent<{ source: 'close-button' | 'keyboard' | 'overlay' }>",
+      "description": "Emitted when the user attempts to close the dialog by clicking the close button, clicking the overlay, or pressing escape. Calling `event.preventDefault()` will keep the dialog open. Avoid using this unless closing the dialog will result in destructive behavior such as data loss."
+    }
+  ],
+  "slots": [
+    {
+      "name": "",
+      "description": "The dialog's main content."
+    },
+    {
+      "name": "label",
+      "description": "The dialog's label. Alternatively, you can use the `label` attribute."
+    },
+    {
+      "name": "header-actions",
+      "description": "Optional actions to add to the header. Works best with `<x-icon-button>`."
+    },
+    {
+      "name": "footer",
+      "description": "The dialog's footer, usually one or more buttons representing various options."
+    }
+  ],
+  "cssProperties": [
+    {
+      "name": "--width",
+      "description": "The preferred width of the dialog. Note that the dialog will shrink to accommodate smaller screens."
+    },
+    {
+      "name": "--header-spacing",
+      "description": "The amount of padding to use for the header."
+    },
+    {
+      "name": "--body-spacing",
+      "description": "The amount of padding to use for the body."
+    },
+    {
+      "name": "--footer-spacing",
+      "description": "The amount of padding to use for the footer."
+    }
+  ],
+  "cssParts": [
+    {
+      "name": "base",
+      "description": "The component's base wrapper."
+    },
+    {
+      "name": "overlay",
+      "description": "The overlay that covers the screen behind the dialog."
+    },
+    {
+      "name": "panel",
+      "description": "The dialog's panel (where the dialog and its content are rendered)."
+    },
+    {
+      "name": "header",
+      "description": "The dialog's header. This element wraps the title and header actions."
+    },
+    {
+      "name": "header-actions",
+      "description": "Optional actions to add to the header. Works best with `<x-icon-button>`."
+    },
+    {
+      "name": "title",
+      "description": "The dialog's title."
+    },
+    {
+      "name": "close-button",
+      "description": "The close button, an `<x-icon-button>`."
+    },
+    {
+      "name": "close-button__base",
+      "description": "The close button's exported `base` part."
+    },
+    {
+      "name": "body",
+      "description": "The dialog's body."
+    },
+    {
+      "name": "footer",
+      "description": "The dialog's footer."
+    }
+  ],
+  "methods": [
+    {
+      "name": "handleOpenChange",
+      "params": [],
+      "return": "void",
+      "description": ""
+    },
+    {
+      "name": "show",
+      "params": [],
+      "return": "void",
+      "description": "Shows the dialog."
+    },
+    {
+      "name": "hide",
+      "params": [],
+      "return": "void",
+      "description": "Hides the dialog"
+    }
+  ]
+}

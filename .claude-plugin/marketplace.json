@@ -5,7 +5,7 @@
     "url": "https://webforj.com"
   },
   "metadata": {
-    "description": "AI plugins for webforJ: MCP server and Skills for building applications with AI assistance.",
+    "description": "Plugin that includes the webforJ MCP server and Skills for building webforJ applications with AI.",
     "version": "0.1.0"
   },
   "plugins": [
@@ -13,7 +13,7 @@
       "name": "webforj",
       "source": "./",
       "version": "0.1.0",
-      "description": "webforJ MCP server and Skills for AI-assisted development."
+      "description": "Plugin that includes the webforJ MCP server and Skills for building webforJ applications with AI."
     }
   ]
 }

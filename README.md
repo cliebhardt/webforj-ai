@@ -63,6 +63,23 @@ Update later:
 copilot plugin update webforj
 ```
 
+### OpenAI Codex CLI
+
+Requires a paid ChatGPT plan (Plus or higher).
+
+```bash
+codex plugin marketplace add webforj/webforj-ai
+```
+
+Then open a Codex session and enable the plugin from the browser:
+
+```bash
+codex
+```
+
+Inside the TUI, type `/plugins`, switch to the `webforj-ai` marketplace tab,
+select `webforj`, and press Space to enable it.
+
 ### Gemini CLI
 
 Install the extension directly from GitHub. This registers both the MCP
@@ -214,6 +231,14 @@ claude mcp remove webforj-mcp
 ```bash
 copilot plugin uninstall webforj
 copilot plugin marketplace remove webforj-ai
+```
+
+### OpenAI Codex CLI
+
+Inside a `codex` session, `/plugins` → select `webforj` → press Space to disable. Then from the shell:
+
+```bash
+codex plugin marketplace remove webforj-ai
 ```
 
 ### Gemini CLI

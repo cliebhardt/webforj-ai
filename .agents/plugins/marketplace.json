@@ -1,0 +1,20 @@
+{
+  "name": "webforj-ai",
+  "interface": {
+    "displayName": "webforJ AI"
+  },
+  "plugins": [
+    {
+      "name": "webforj",
+      "source": {
+        "source": "local",
+        "path": "./plugins/webforj"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Coding"
+    }
+  ]
+}
