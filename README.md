@@ -80,6 +80,18 @@ codex
 Inside the TUI, type `/plugins`, switch to the `webforj-ai` marketplace tab,
 select `webforj`, and press Space to enable it.
 
+**Invoking skills in Codex.** Codex does not auto-load skills by prompt
+match the way Claude Code and other clients do. To use a skill, prefix
+it with `$<plugin>:<skill>`:
+
+```
+$webforj:webforj-styling-apps explain the DWC color model
+$webforj:webforj-creating-components how do I wrap a Custom Element?
+```
+
+MCP tools (`webforj-create-project`, `webforj-create-theme`,
+`webforj-knowledge-base`) work automatically without the `$` prefix.
+
 ### Gemini CLI
 
 Install the extension directly from GitHub. This registers both the MCP
@@ -180,13 +192,25 @@ Pointers to each client's skills docs:
 
 ## Usage
 
-### Skills fire automatically on matching prompts
+### Skills
+
+In Claude Code, GitHub Copilot CLI, and Gemini CLI, skills fire
+automatically when your prompt matches their description:
 
 - *"Wrap this Custom Element library as a webforJ component."*
 - *"Style this view with the DWC design tokens and add a dark theme."*
 - *"Create a reusable form control that extends ElementComposite."*
 
-### MCP tools for direct scaffolding and lookup
+In **Codex**, skills are not auto-loaded. Invoke them explicitly with
+the `$<plugin>:<skill>` syntax:
+
+- *"`$webforj:webforj-styling-apps` explain the DWC color model"*
+- *"`$webforj:webforj-creating-components` how do I wrap a Custom Element?"*
+
+### MCP tools
+
+MCP tools work automatically in every client once the plugin or MCP
+server is connected.
 
 - *"Scaffold a new webforJ sidemenu project called CustomerPortal."* (uses `webforj-create-project`)
 - *"Generate a theme from brand color #6366f1."* (uses `webforj-create-theme`)
