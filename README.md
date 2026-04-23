@@ -17,34 +17,62 @@ framework.
 - **webforj-styling-apps** skill: style and theme webforJ applications
   using the DWC design token system (`--dwc-*` CSS custom properties).
 
-## Installation
+## Clients
 
-### Claude Code
+Pick yours. Each section covers install, update, and uninstall.
 
-Add the webforJ marketplace and install the plugin:
+<details>
+<summary><b>Claude Code</b></summary>
+
+**Install**
 
 ```bash
 claude plugin marketplace add webforj/webforj-ai
 claude plugin install webforj@webforj-ai
 ```
 
-Verify:
+Verify inside Claude Code:
 
 ```
 /plugin
 /mcp
 ```
 
-The `webforj` plugin appears under Installed. The MCP server appears
-as `plugin:webforj:webforj-mcp` under connected servers.
+The `webforj` plugin appears under Installed. The MCP server appears as
+`plugin:webforj:webforj-mcp` under connected servers.
 
-To keep the plugin up to date, enable auto update for the marketplace
-from the `/plugin` UI. Claude Code refreshes on launch and pulls new
-skill content automatically.
+**Update**
 
-### GitHub Copilot CLI
+Enable auto update for the marketplace from the `/plugin` UI once. From
+then on, Claude Code refreshes on launch and pulls new skill content
+automatically.
 
-Add the webforJ marketplace and install the plugin:
+Manual refresh:
+
+```
+/plugin marketplace update webforj-ai
+/reload-plugins
+```
+
+**Uninstall**
+
+```bash
+claude plugin uninstall webforj@webforj-ai
+claude plugin marketplace remove webforj-ai
+```
+
+If you registered the MCP server directly, remove it too:
+
+```bash
+claude mcp remove webforj-mcp
+```
+
+</details>
+
+<details>
+<summary><b>GitHub Copilot CLI</b></summary>
+
+**Install**
 
 ```bash
 copilot plugin marketplace add webforj/webforj-ai
@@ -57,45 +85,76 @@ Verify:
 copilot plugin list
 ```
 
-Update later:
+**Update**
 
 ```bash
 copilot plugin update webforj
 ```
 
-### OpenAI Codex CLI
+**Uninstall**
 
-Requires a paid ChatGPT plan (Plus or higher).
+```bash
+copilot plugin uninstall webforj
+copilot plugin marketplace remove webforj-ai
+```
+
+</details>
+
+<details>
+<summary><b>OpenAI Codex CLI</b> </summary>
+
+**Install**
 
 ```bash
 codex plugin marketplace add webforj/webforj-ai
 ```
 
-Then open a Codex session and enable the plugin from the browser:
+Then open a Codex session and enable the plugin:
 
 ```bash
 codex
 ```
 
-Inside the TUI, type `/plugins`, switch to the `webforj-ai` marketplace tab,
-select `webforj`, and press Space to enable it.
+Inside the TUI, type `/plugins`, select `webforj`, and press **Space** to enable it.
 
-**Invoking skills in Codex.** Codex does not auto-load skills by prompt
-match the way Claude Code and other clients do. To use a skill, prefix
-it with `$<plugin>:<skill>`:
+**Invoking skills in Codex.** Codex does not auto load skills by prompt
+match the way other clients do. Invoke with the `$<plugin>:<skill>`
+syntax:
 
 ```
 $webforj:webforj-styling-apps explain the DWC color model
 $webforj:webforj-creating-components how do I wrap a Custom Element?
 ```
 
-MCP tools (`webforj-create-project`, `webforj-create-theme`,
-`webforj-knowledge-base`) work automatically without the `$` prefix.
+MCP tools work automatically without the `$` prefix.
 
-### Gemini CLI
+**Update**
 
-Install the extension directly from GitHub. This registers both the MCP
-server and the skills in one command:
+Codex does not have an `update` command for local path marketplaces.
+Remove and re-add:
+
+```bash
+codex plugin marketplace remove webforj-ai
+codex plugin marketplace add webforj/webforj-ai
+```
+
+Then re-enable the plugin from `/plugins` if needed.
+
+**Uninstall**
+
+Inside a `codex` session, `/plugins` → select `webforj` → press Space to
+disable. Then from the shell:
+
+```bash
+codex plugin marketplace remove webforj-ai
+```
+
+</details>
+
+<details>
+<summary><b>Gemini CLI</b></summary>
+
+**Install**
 
 ```bash
 gemini extensions install https://github.com/webforj/webforj-ai
@@ -107,23 +166,29 @@ Verify:
 gemini extensions list
 ```
 
-Update later:
+**Update**
 
 ```bash
 gemini extensions update webforj
 ```
 
-Uninstall:
+**Uninstall**
 
 ```bash
 gemini extensions uninstall webforj
 ```
 
-### VS Code with GitHub Copilot (Agent mode)
+</details>
 
-Requires GitHub Copilot enabled on your account.
+<details>
+<summary><b>VS Code + GitHub Copilot</b></summary>
 
-1. `⌘⇧P` -> `MCP: Add Server`
+Requires GitHub Copilot enabled on your account. VS Code supports both
+the MCP server and the skills, but they install separately.
+
+**Install the MCP server**
+
+1. `⌘⇧P` → `MCP: Add Server`
 2. Select `HTTP`
 3. Paste `https://mcp.webforj.com/mcp`
 4. Name the server `webforj-mcp`
@@ -141,15 +206,53 @@ Or add it directly to `mcp.json`:
 }
 ```
 
-Open Copilot Chat, switch to **Agent** mode, and type `#webforj-mcp`
-to confirm the tools load.
+Open Copilot Chat, switch to **Agent** mode, and type `#webforj-mcp` to
+confirm the tools load.
 
-To get the skills in VS Code too, see the [Skills in other clients](#skills-in-other-clients) section below.
+**Install the skills**
 
-### Other MCP Clients
+VS Code reads skills from `.github/skills/`, `.claude/skills/`, or
+`.agents/skills/` in your project (or the `~/.copilot/skills/` global
+folder for personal skills). Clone this repo and copy the skill
+directories into one of those paths:
+
+```bash
+git clone https://github.com/webforj/webforj-ai.git
+mkdir -p .github/skills
+cp -R webforj-ai/skills/* .github/skills/
+```
+
+Alternatively, open VS Code's Chat Customizations (gear icon in chat →
+**Skills** tab) to browse and manage installed skills.
+
+**Update**
+
+- MCP server: remote URL, always serves the latest. No action needed.
+- Skills: re-copy from the repo:
+
+  ```bash
+  cd webforj-ai && git pull
+  cp -R skills/* ../.github/skills/
+  ```
+
+**Uninstall**
+
+- MCP server: `⌘⇧P` → `MCP: List Servers` → select `webforj-mcp` → Remove.
+- Skills: remove copies with:
+
+  ```bash
+  rm -rf .github/skills/webforj-*
+  ```
+
+</details>
+
+<details>
+<summary><b>Other MCP Clients</b></summary>
+
+**Install**
 
 Any editor or tool that supports Streamable HTTP MCP servers can
-connect. Add to your client's MCP configuration:
+connect. Add this to your client's MCP configuration:
 
 ```json
 {
@@ -161,115 +264,62 @@ connect. Add to your client's MCP configuration:
 }
 ```
 
-For the skills, see the [Skills in other clients](#skills-in-other-clients) section.
+For skills, see [Skills in other clients](#skills-in-other-clients).
 
-## Skills in other clients
+**Update**
 
-The skills in this plugin follow the [Agent Skills](https://agentskills.io)
-open standard, which is natively supported by a wide range of clients
-including **VS Code**, **GitHub Copilot**, **Cursor**, **Gemini CLI**,
-**OpenAI Codex**, **Junie** (JetBrains), **OpenCode**, **Goose**, **Amp**,
-**Kiro**, and more. See [agentskills.io](https://agentskills.io) for the
-full list.
+The MCP server is remote — no action needed.
 
-Installation differs per client. The common path is:
+**Uninstall**
 
-1. Clone this repo somewhere locally or pull the `skills/` directory
-   into your project or skills folder.
-2. Follow your client's skills documentation to register them.
+Remove the `webforj-mcp` entry from your client's MCP configuration.
 
-Pointers to each client's skills docs:
-
-- [VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-skills)
-- [GitHub Copilot](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills)
-- [Cursor](https://cursor.com/docs/context/skills)
-- [Gemini CLI](https://geminicli.com/docs/cli/skills/)
-- [OpenAI Codex](https://developers.openai.com/codex/skills/)
-- [Junie](https://junie.jetbrains.com/docs/agent-skills.html)
-- [OpenCode](https://opencode.ai/docs/skills/)
-- [Goose](https://block.github.io/goose/docs/guides/context-engineering/using-skills/)
-- [Kiro](https://kiro.dev/docs/skills/)
+</details>
 
 ## Usage
-
-### Skills
 
 In Claude Code, GitHub Copilot CLI, and Gemini CLI, skills fire
 automatically when your prompt matches their description:
 
 - *"Wrap this Custom Element library as a webforJ component."*
 - *"Style this view with the DWC design tokens and add a dark theme."*
-- *"Create a reusable form control that extends ElementComposite."*
 
-In **Codex**, skills are not auto-loaded. Invoke them explicitly with
-the `$<plugin>:<skill>` syntax:
+In **Codex**, invoke skills explicitly with the `$<plugin>:<skill>`
+syntax:
 
 - *"`$webforj:webforj-styling-apps` explain the DWC color model"*
 - *"`$webforj:webforj-creating-components` how do I wrap a Custom Element?"*
 
-### MCP tools
-
-MCP tools work automatically in every client once the plugin or MCP
-server is connected.
+MCP tools work automatically in every client:
 
 - *"Scaffold a new webforJ sidemenu project called CustomerPortal."* (uses `webforj-create-project`)
 - *"Generate a theme from brand color #6366f1."* (uses `webforj-create-theme`)
 - *"Search webforJ docs for @Route annotation and navigation."* (uses `webforj-knowledge-base`)
 
-## Updates
+## Skills in other clients
 
-- **MCP server** is remote, so every session uses the latest tools
-  automatically. No action required.
-- **Skills** are versioned via this repo. With marketplace auto update
-  enabled, new skill content arrives on the next session. Otherwise
-  refresh manually:
+Beyond the clients listed above, the skills follow the
+[Agent Skills](https://agentskills.io) open standard and work in many
+more AI coding tools: **Cursor**, **Junie** (JetBrains), **OpenCode**,
+**Goose**, **Amp**, **Kiro**, and others. See
+[agentskills.io](https://agentskills.io) for the full list.
 
-  ```
-  /plugin marketplace update webforj-ai
-  /reload-plugins
-  ```
+<details>
+<summary>Per-client skill install pointers</summary>
 
-  For Copilot CLI:
+Installation differs per client. The common path is:
 
-  ```bash
-  copilot plugin update webforj
-  ```
+1. Clone this repo or copy the `skills/` directory into your project or
+   skills folder.
+2. Follow your client's skills documentation to register them.
 
-## Uninstall
+- [Cursor](https://cursor.com/docs/context/skills)
+- [Junie](https://junie.jetbrains.com/docs/agent-skills.html)
+- [OpenCode](https://opencode.ai/docs/skills/)
+- [Goose](https://block.github.io/goose/docs/guides/context-engineering/using-skills/)
+- [Kiro](https://kiro.dev/docs/skills/)
 
-### Claude Code
-
-```bash
-claude plugin uninstall webforj@webforj-ai
-claude plugin marketplace remove webforj-ai
-```
-
-If you registered the MCP server directly, remove it too:
-
-```bash
-claude mcp remove webforj-mcp
-```
-
-### Copilot CLI
-
-```bash
-copilot plugin uninstall webforj
-copilot plugin marketplace remove webforj-ai
-```
-
-### OpenAI Codex CLI
-
-Inside a `codex` session, `/plugins` → select `webforj` → press Space to disable. Then from the shell:
-
-```bash
-codex plugin marketplace remove webforj-ai
-```
-
-### Gemini CLI
-
-```bash
-gemini extensions uninstall webforj
-```
+</details>
 
 ## License
 
