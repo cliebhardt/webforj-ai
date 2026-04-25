@@ -1,0 +1,52 @@
+{
+  "skill_name": "webforj-upgrading-versions",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm on webforJ 25.12 in a standard Maven project (no Spring). Walk me through upgrading to 26.",
+      "expected_output": "The agent guides the user through the eight-step OpenRewrite workflow with the standard recipe, resolves the TODO webforJ comments by following the substitution embedded in each comment, verifies the build, and removes the rewrite plugin from pom.xml at the end.",
+      "expectations": [
+        "Calls webforj-mcp:get_versions to confirm the target major (26)",
+        "Runs node scripts/list-recipes.mjs to discover the available recipes for the target major instead of citing a hardcoded list",
+        "Picks com.webforj.rewrite.v26.UpgradeWebforj (not the Spring variant)",
+        "Adds the rewrite-maven-plugin block to pom.xml with the correct recipe name and a 26.x version of webforj-rewrite",
+        "Runs mvn rewrite:dryRun before mvn rewrite:run and reads the generated patch",
+        "Runs mvn rewrite:run to apply the recipe",
+        "After rewrite:run, greps the project for 'TODO webforJ' comments",
+        "Resolves each TODO by following the substitution embedded in the comment, including replacing IconRenderer string constructors with new IconRenderer<>(new Icon(name, pool))",
+        "Runs mvn clean compile and mvn test before declaring done",
+        "Removes the rewrite-maven-plugin block from pom.xml after TODOs are resolved"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Upgrade my Spring Boot webforJ app from 25 to 26.",
+      "expected_output": "The agent detects the Spring project, picks the Spring-specific recipe, follows the same eight-step workflow, and notes the additional pom changes the Spring recipe applies (Tomcat property, redundant webforj dependency, Spring Boot 4 upgrade).",
+      "expectations": [
+        "Detects the Spring project from a webforj-spring-boot-starter dependency in pom.xml",
+        "Runs node scripts/list-recipes.mjs to discover the available recipes for the target major",
+        "Picks com.webforj.rewrite.v26.UpgradeWebforjSpring (not the standard variant)",
+        "Surfaces the Spring recipe's pom-level side effects to the user before applying — specifically the <tomcat.version> property removal, the standalone com.webforj:webforj dependency removal, and the upstream Spring Boot 4 upgrade — discovered from the rewrite:dryRun patch (not from a hardcoded list in the skill)",
+        "Otherwise follows the same eight-step workflow as the standard project upgrade",
+        "For 'Use <replacement> instead' TODOs, applies the substitute and deletes the TODO comment",
+        "For 'Configure elsewhere' TODOs (e.g. Webswing options 'Configure directly in the Admin Console'), does NOT delete the call — leaves the original call and TODO comment in place and reports back to the user listing each affected call, the value it was passing, and where the equivalent setting now lives"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Help me upgrade webforJ from 24.20 to 25.12.",
+      "expected_output": "The agent recognizes that no webforj-rewrite recipe exists for a 24-to-25 target and switches to the manual fallback workflow, driven by compile errors and search_knowledge_base lookups.",
+      "expectations": [
+        "Runs node scripts/list-recipes.mjs and confirms no v25 umbrella recipe exists in the output",
+        "On finding no v25 recipe, switches to the manual fallback workflow described in SKILL.md",
+        "Does NOT invent or cite a non-existent recipe name (e.g. com.webforj.rewrite.v25.UpgradeWebforj or com.webforj.rewrite.v25.UpgradeWebforjSpring)",
+        "Bumps <webforj.version> in pom.xml directly",
+        "Runs mvn clean compile and uses the failures to drive the migration",
+        "For each compile error calls webforj-mcp:search_knowledge_base with the failing symbol and target major",
+        "Prefers type: 'documentation' for upgrade notes, falls back to type: 'java' for new API signatures",
+        "Does NOT add the rewrite-maven-plugin block (it would not apply for this target)",
+        "Runs mvn test after the project compiles"
+      ]
+    }
+  ]
+}

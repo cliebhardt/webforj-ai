@@ -3,3 +3,7 @@ node_modules/
 .idea/
 .vscode/
 *.log
+
+# skill-creator runtime artifacts (any *-workspace/ at any depth)
+*-workspace/
+feedback.json

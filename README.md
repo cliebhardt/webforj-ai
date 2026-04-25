@@ -7,20 +7,30 @@ framework.
 
 ## What's Included
 
-- **webforJ MCP server** (remote, hosted at `https://mcp.webforj.com/mcp`)
-  - `get_versions`: which webforJ versions you can target.
-  - `create_project`: spin up a fresh webforJ Maven project.
-  - `search_knowledge_base`: look things up in the webforJ knowledge base.
-  - `get_document`: pull the full page behind a search hit.
-  - `styles_get_component`: everything you can style on a DWC component — CSS variables, parts, reflected attributes, slots.
-  - `styles_list_tokens`: the full list of `--dwc-*` design tokens.
-  - `styles_validate_tokens`: check your CSS (or Java, MDX, Markdown) for `--dwc-*` typos before you ship it.
-  - `create_theme`: turn a brand color into a full DWC theme.
-- **webforj-creating-components** skill: build reusable webforJ components
-  from core components, third party Web Component libraries, or plain
-  JavaScript libraries.
-- **webforj-styling-apps** skill: style and theme webforJ applications
-  using the DWC design token system (`--dwc-*` CSS custom properties).
+The plugin bundles one MCP server and a curated set of skills.
+
+### MCP server
+
+Remote, hosted at `https://mcp.webforj.com/mcp`. Exposes these tools:
+
+| Tool | What it does |
+| --- | --- |
+| `get_versions` | List the webforJ majors this server knows about, including the current stable, the active SNAPSHOT, and which majors have data available for the styling tools. |
+| `create_project` | Return the Maven archetype command (and follow-up commands) that scaffold a new webforJ project. |
+| `search_knowledge_base` | Search the indexed docs, JavaDoc, code samples, and Kotlin DSL. Returns ranked snippets with categories. |
+| `get_document` | Pull the full content behind a search result, for migration guides, full tutorials, or long API pages. |
+| `styles_get_component` | Return the real CSS styling surface of a DWC component — CSS custom properties, shadow parts, reflected attributes, and slots. |
+| `styles_list_tokens` | Return the authoritative list of global `--dwc-*` tokens (palette seeds, color shades, spacing, typography, borders). |
+| `styles_validate_tokens` | Validate every `--dwc-*` reference in CSS, Java, MDX, or Markdown text and flag invalid tokens with similar-name suggestions. |
+| `create_theme` | Generate a webforJ theme from a primary HSL color, including `@AppTheme` / `@StyleSheet` snippets and the full stylesheet. |
+
+### Skills
+
+| Skill | What it does |
+| --- | --- |
+| [`webforj-creating-components`](skills/webforj-creating-components/SKILL.md) | Build reusable webforJ components from core components, third-party Web Component libraries, or plain JavaScript libraries. Covers `ElementComposite` wrappers, component extensions, and page-level utilities. |
+| [`webforj-styling-apps`](skills/webforj-styling-apps/SKILL.md) | Style and theme webforJ applications using the DWC design-token system (`--dwc-*` CSS custom properties). Covers OKLCH palette configuration, component styling via CSS variables and `::part()`, layout tokens, dark mode, and theme creation. |
+| [`webforj-upgrading-versions`](skills/webforj-upgrading-versions/SKILL.md) | Upgrade a webforJ project to a newer major using the official `webforj-rewrite` OpenRewrite recipes (introduced in webforJ 26). Includes a manual fallback for source-target pairs without a published recipe (for example 24 to 25). |
 
 ## Clients
 
@@ -512,12 +522,14 @@ automatically when your prompt matches their description:
 
 - *"Wrap this Custom Element library as a webforJ component."*
 - *"Style this view with the DWC design tokens and add a dark theme."*
+- *"Upgrade this project from webforJ 25 to 26."*
 
 In **Codex**, invoke skills explicitly with the `$<plugin>:<skill>`
 syntax:
 
 - *"`$webforj:webforj-styling-apps` explain the DWC color model"*
 - *"`$webforj:webforj-creating-components` how do I wrap a Custom Element?"*
+- *"`$webforj:webforj-upgrading-versions` upgrade this project to the latest webforJ major"*
 
 MCP tools work automatically in every client:
 
