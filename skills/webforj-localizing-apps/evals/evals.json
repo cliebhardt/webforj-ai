@@ -1,0 +1,59 @@
+{
+  "skill_name": "webforj-localizing-apps",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a plain webforJ app (no Spring) with hardcoded English labels. Add internationalization with English and German support, auto-detect the user's browser language at startup, and let users switch language at runtime. Translations should live in standard `.properties` files.",
+      "expected_output": "The agent adds `webforj.i18n.supported-locales` and `webforj.i18n.auto-detect` to the HOCON `webforj.conf`, creates `messages.properties` and `messages_de.properties` under `src/main/resources/`, replaces hardcoded text with `t(\"key\")` calls in components that `implements HasTranslation`, makes those components also `implements LocaleObserver` and re-apply the same `t(\"key\")` calls inside `onLocaleChange(LocaleEvent)`, and wires some user interaction to call `App.setLocale(Locale.forLanguageTag(...))`. No Spring code is introduced.",
+      "expectations": [
+        "Adds `webforj.i18n.supported-locales` and `webforj.i18n.auto-detect` to a HOCON `webforj.conf` (NOT to `application.properties`)",
+        "Creates `messages.properties` and `messages_de.properties` under `src/main/resources/` with parallel keys",
+        "Replaces hardcoded labels with `t(\"...\")` calls (or `App.getTranslation(...)` outside a component)",
+        "Every component that calls `t(...)` declares `implements HasTranslation` (or `implements HasTranslation, LocaleObserver` when it also reacts to changes), since `t(...)` is not inherited from `Composite`",
+        "At least one component holding translated text implements `LocaleObserver` and re-applies its text by calling the same `t(\"key\")` inside `onLocaleChange(LocaleEvent)`",
+        "Wires a user interaction whose handler calls `App.setLocale(Locale.forLanguageTag(...))` (or `App.setLocale(Locale.GERMAN)`) to change the locale at runtime",
+        "Does NOT introduce Spring dependencies, `application.properties`, or `MessageSource` beans"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "My webforJ Spring Boot app already has a couple of views. Wire up i18n: support English and German, auto-detect from the browser, and store translations in `messages.properties` files. Provide a way for the user to change the language at runtime.",
+      "expected_output": "The agent adds `webforj.i18n.supported-locales=en,de` and `webforj.i18n.auto-detect=true` to `application.properties`, creates `messages.properties` and `messages_de.properties`, makes long lived components `implements HasTranslation, LocaleObserver` so they can call `t(\"key\")` and re-apply text in `onLocaleChange(LocaleEvent)`, and wires a user interaction to `App.setLocale(...)`. No custom `TranslationResolver` is registered because Spring auto-configures the default `BundleTranslationResolver` from `application.properties`.",
+      "expectations": [
+        "Adds `webforj.i18n.supported-locales=en,de` and `webforj.i18n.auto-detect=true` to `application.properties` (NOT to a HOCON `webforj.conf`)",
+        "Creates `messages.properties` and `messages_de.properties` under `src/main/resources/` with parallel keys",
+        "Components that call `t(...)` declare `implements HasTranslation` (or combine it with `LocaleObserver`)",
+        "At least one component implements `LocaleObserver` and re-applies translated text in `onLocaleChange(LocaleEvent)`",
+        "Wires a user interaction whose handler calls `App.setLocale(Locale.forLanguageTag(...))`",
+        "Does NOT define a custom `TranslationResolver` `@Bean` for this scenario, since Spring auto-configuration provides a default `BundleTranslationResolver` from `application.properties`",
+        "Does NOT invent or cite Spring `MessageSource`, `LocaleResolver`, or `LocaleChangeInterceptor` (these are NOT how webforJ wires translations)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We are adding a Spring Boot webforJ app where translations live in a database table `translations(message_key, locale, message_value)` instead of `.properties` files. Wire up an i18n backend that reads from the repository, with English and German supported. The rest of the app already uses `t(\"...\")` calls.",
+      "expected_output": "The agent implements `TranslationResolver` against the repository, exposes it as a Spring `@Bean` from a `@Configuration` class, derives the supported locale list from `SpringConfigurationProperties.getI18n().getSupportedLocales()`, returns the key itself when the lookup misses, and applies `MessageFormat` when args are provided. No call to `App.setTranslationResolver` is needed because the Spring integration installs the bean automatically.",
+      "expectations": [
+        "Implements a class that implements `TranslationResolver` and overrides both `resolve(String key, Locale locale, Object... args)` and `getSupportedLocales()`",
+        "Exposes the resolver as a Spring `@Bean` from a `@Configuration` class",
+        "Derives the supported locale list from `SpringConfigurationProperties.getI18n().getSupportedLocales()` (mapped through `Locale::forLanguageTag`) rather than hardcoding the list a second time",
+        "Returns the lookup key itself as the fallback when no translation is found (matching the documented simple resolver shape)",
+        "Uses `java.text.MessageFormat` to substitute `{0}`, `{1}` placeholders when `args` are provided and non-empty",
+        "Does NOT call `App.setTranslationResolver` from application code, the Spring bean is picked up by the framework",
+        "Does NOT invent or cite Spring `MessageSource` as the integration point"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "We have a plain webforJ app (no Spring). Translations need to come from a custom backend (a JSON catalog loaded at startup). Register a custom `TranslationResolver` for English and German, in the documented way for a non Spring app.",
+      "expected_output": "The agent implements `TranslationResolver`, then registers it by calling `App.setTranslationResolver(...)` from inside `AppLifecycleListener.onWillRun(App app)`. The listener is discovered via service provider configuration: either `@AutoService(AppLifecycleListener.class)` or a `META-INF/services/com.webforj.AppLifecycleListener` file. The resolver is NOT installed by overriding methods on the `App` subclass.",
+      "expectations": [
+        "Implements a class that implements `TranslationResolver` and overrides `resolve(...)` and `getSupportedLocales()`",
+        "Implements an `AppLifecycleListener` whose `onWillRun(App app)` method calls `App.setTranslationResolver(new <CustomResolver>(...))`",
+        "Registers the listener via `@AutoService(AppLifecycleListener.class)` or by adding the listener's fully qualified class name to `src/main/resources/META-INF/services/com.webforj.AppLifecycleListener`",
+        "Does NOT install the resolver by overriding a method on the `App` subclass (e.g. does NOT add a `protected void onWillRun()` override in `Application extends App`)",
+        "Does NOT introduce Spring annotations (`@Configuration`, `@Bean`, `@Component`) for this plain app scenario"
+      ]
+    }
+  ]
+}

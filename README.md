@@ -531,6 +531,7 @@ Remote, hosted at `https://mcp.webforj.com/mcp`. Exposes these tools:
 | Skill | What it does |
 | --- | --- |
 | [`webforj-creating-components`](skills/webforj-creating-components/SKILL.md) | Build reusable webforJ components from core components, third-party Web Component libraries, or plain JavaScript libraries. Covers `ElementComposite` wrappers, component extensions, and page-level utilities. |
+| [`webforj-localizing-apps`](skills/webforj-localizing-apps/SKILL.md) | Add locale and translation support to a webforJ app. Covers supported locales, browser auto-detect, `messages.properties` bundles, runtime language switching, and custom translation backends for plain and Spring projects. |
 | [`webforj-styling-apps`](skills/webforj-styling-apps/SKILL.md) | Style and theme webforJ applications using the DWC design-token system (`--dwc-*` CSS custom properties). Covers OKLCH palette configuration, component styling via CSS variables and `::part()`, layout tokens, dark mode, and theme creation. |
 | [`webforj-upgrading-versions`](skills/webforj-upgrading-versions/SKILL.md) | Upgrade a webforJ project to a newer major using the official `webforj-rewrite` OpenRewrite recipes (introduced in webforJ 26). Includes a manual fallback for source-target pairs without a published recipe (for example 24 to 25). |
 
