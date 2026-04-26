@@ -1,183 +1,198 @@
-# Color System Reference
+# DWC Colors
 
-## OKLCH Engine
+For the actual token catalog of the resolved version, call `webforj-mcp:styles_list_tokens` with the augmented args `webforjVersion` and `reasoning`, plus an optional `prefix` like `--dwc-color-`.
 
-The DWC theme engine uses **OKLCH color space** internally. Palette seeds are defined as HSL hue + saturation, but all 19 shades are generated via OKLCH for perceptual uniformity. No build step — CSS recalculates at runtime.
+## Universal facts (DWC v1 and v2)
 
-## Shade Scale
-
-Each palette has 19 shades numbered 5 through 95 in steps of 5:
+### Shade syntax
 
 ```
-5  10  15  20  25  30  35  40  45  50  55  60  65  70  75  80  85  90  95
+--dwc-color-{palette}-{step}
 ```
 
-- Step 5 = always darkest (3% OKLCH lightness)
-- Step 95 = always lightest (99% OKLCH lightness)
-- Lightness is **absolute** — steps do NOT invert in dark mode
+`{step}` is a number from 5 to 95 in increments of 5. Step 5 is the darkest, step 95 is the lightest.
 
-Token pattern: `--dwc-color-{palette}-{shade}`
+### Palettes
+
+- `default` — neutral, tinted with the primary
+- `primary` — brand color
+- `success`, `warning`, `danger` — semantic status
+- `info` — complementary / secondary emphasis
+- `gray` — pure gray scale
+- `black`, `white` — globals (see per-version notes below)
+
+### Variation tokens
+
+Both versions define abstract variation variables that pull from underlying shades. Components use these instead of raw shade numbers.
+
+Groups that exist in both:
+
+- **Normal** — base background, text, border, focus ring
+- **Dark** — active / pressed states
+- **Light** — hover / focus states
+- **Alt** — secondary highlights
+
+Per group, both versions document:
+
+```
+--dwc-color-{palette}                normal background / fill
+--dwc-color-{palette}-dark           dark variant
+--dwc-color-{palette}-light          light variant
+--dwc-color-{palette}-alt            alt variant
+--dwc-color-{palette}-text           surface-safe text in palette color
+--dwc-color-{palette}-text-dark      darker surface-safe text
+--dwc-color-{palette}-text-light     lighter surface-safe text
+--dwc-color-on-{palette}-text        text ON --dwc-color-{palette}
+--dwc-color-on-{palette}-text-dark   text ON --dwc-color-{palette}-dark
+--dwc-color-on-{palette}-text-light  text ON --dwc-color-{palette}-light
+--dwc-color-on-{palette}-text-alt    text ON --dwc-color-{palette}-alt
+--dwc-border-color-{palette}         per-palette border color
+--dwc-focus-ring-{palette}           per-palette focus ring
+```
+
+### Dark mode behavior
+
+Both versions describe the same flipped-color strategy: shade lightness is interpreted relative to mode, so the same component CSS keeps working in both light and dark themes. Code stays the same, mid-tone backgrounds remain mid-tone visually but flip to suit the surface.
+
+## DWC v1 only
+
+### Palette configuration
+
+Each palette is generated based on three variables:
+
+| Variable | Description |
+|---|---|
+| `hue` | the angle (in degrees) on the color wheel |
+| `saturation` | a percentage indicating color intensity |
+| `contrast-threshold` | a value between 0 and 100 that determines whether text should be light or dark based on background lightness |
+
+Set them at `:root`:
 
 ```css
---dwc-color-primary-5    /* very dark */
---dwc-color-primary-50   /* mid */
---dwc-color-primary-95   /* very light */
-```
-
-### Chroma curve
-
-Each step has a bell-shaped chroma multiplier (0.1–1.0, peak at mid-lightness). This follows natural sRGB gamut boundaries — extreme light/dark steps are less saturated.
-
-### Hue rotation
-
-`--dwc-color-hue-rotate` (default: 3 degrees) shifts hue across the scale — darker steps shift warm (+1 at step 5), lighter shift cool (-1 at step 95). Mimics natural pigment behavior. Set to `0` to disable.
-
-## Text on Shade Backgrounds
-
-Two categories of text tokens:
-
-### Surface-safe text (`-text-{shade}`)
-
-Colored text safe on neutral surfaces (body, panels):
-
-```
---dwc-color-{palette}-text-{shade}
-```
-
-Light mode caps lightness at 44%, dark mode floors at 75%. WCAG AA guaranteed.
-
-### On-palette text (`on-{palette}-text-{shade}`)
-
-Contrast text for use directly ON a shade as background:
-
-```
---dwc-color-on-{palette}-text-{shade}
-```
-
-Automatically flips between light/dark at OKLCH 0.59 threshold. Preserves subtle color tint (not pure black/white).
-
-Always pair backgrounds with matching text:
-
-```css
-background: var(--dwc-color-primary-30);
-color: var(--dwc-color-on-primary-text-30);
-```
-
-## Semantic Tokens
-
-| Token | Use |
-|-------|-----|
-| `--dwc-color-{palette}` | Default button/link color |
-| `--dwc-color-{palette}-dark` | `:active`, selected rows |
-| `--dwc-color-{palette}-light` | `:hover`, `:focus-visible` |
-| `--dwc-color-{palette}-alt` | Badges, tags, subtle accents |
-| `--dwc-color-{palette}-tint` | Seed at 12% opacity (subtle alt bg) |
-| `--dwc-color-{palette}-text` | Label text on colored background |
-| `--dwc-color-{palette}-text-dark` | Text on active state |
-| `--dwc-color-{palette}-text-light` | Text on hover state |
-| `--dwc-color-{palette}-text-alt` | Text on alt state |
-
-## On-Text Tokens
-
-When using a `{palette}-text` color as a **background** (inverted UI), use on-text tokens for the foreground:
-
-| Token | Description |
-|-------|-------------|
-| `--dwc-color-on-{palette}-text` | Text on palette-text background |
-| `--dwc-color-on-{palette}-text-dark` | Dark variant |
-| `--dwc-color-on-{palette}-text-light` | Light variant |
-| `--dwc-color-on-{palette}-text-alt` | Alt variant |
-
-```css
-.badge-inverted {
-  background: var(--dwc-color-primary-text);
-  color: var(--dwc-color-on-primary-text);
+:root {
+  --dwc-color-primary-h: 225;
+  --dwc-color-primary-s: 100%;
+  --dwc-color-primary-c: 60;
 }
 ```
 
-## Border and Focus Ring
+### Per-palette variation values
+
+The v1 doc shows the exact step mappings for each palette. Examples (from the doc tabs):
+
+Default / Tone:
+
+```
+--dwc-color-default-dark: var(--dwc-color-default-85);
+--dwc-color-default:      var(--dwc-color-default-90);
+--dwc-color-default-light: var(--dwc-color-default-95);
+--dwc-color-default-alt:  var(--dwc-color-primary-alt);
+```
+
+Primary:
+
+```
+--dwc-color-primary-dark:  var(--dwc-color-primary-35);
+--dwc-color-primary:       var(--dwc-color-primary-40);
+--dwc-color-primary-light: var(--dwc-color-primary-45);
+--dwc-color-primary-alt:   var(--dwc-color-primary-95);
+```
+
+Each palette also defines a `--dwc-focus-ring-{palette}` value built from `hsla(...)` using the palette's `-h`, `-s`, plus `--dwc-focus-ring-l` and `--dwc-focus-ring-a`.
+
+## DWC v2 only
+
+### Palette configuration
+
+Each palette is generated from two seed variables:
+
+| Seed Variable | Description |
+|---|---|
+| `--dwc-color-{name}-h` | hue angle of the seed color (0–360) |
+| `--dwc-color-{name}-s` | saturation percentage (0% to 100%) |
+
+There is no `-c` (contrast threshold) variable in DWC v2. The v2 doc states: "All generated text colors meet WCAG AA contrast requirements automatically."
+
+Default values shipped on the default theme:
+
+```
+--dwc-color-primary-h: 223;  --dwc-color-primary-s: 91%;
+--dwc-color-success-h: 153;  --dwc-color-success-s: 60%;
+--dwc-color-warning-h: 35;   --dwc-color-warning-s: 90%;
+--dwc-color-danger-h:  4;    --dwc-color-danger-s:  90%;
+--dwc-color-info-h:    262;  --dwc-color-info-s:    65%;
+--dwc-color-gray-h:    0;    --dwc-color-gray-s:    0%;
+--dwc-color-default-h: var(--dwc-color-primary-h);
+--dwc-color-default-s: 3%;
+```
+
+### Direct seed override
+
+Each palette also exposes `--dwc-color-{name}-seed`:
 
 ```css
-/* Border color per palette (two variants) */
-border: var(--dwc-border-width) var(--dwc-border-style) var(--dwc-border-color-primary);
-border: var(--dwc-border-width) var(--dwc-border-style) var(--dwc-border-color-primary-emphasis);
+:root {
+  --dwc-color-primary-seed: #6366f1;
+}
 ```
 
-Focus ring uses a gap pattern (double box-shadow):
+By default this is constructed from the hue and saturation values, but it can be overridden directly with any valid CSS color to bypass the hue/saturation system entirely.
 
-| Token | Default | Description |
-|-------|---------|-------------|
-| `--dwc-focus-ring-a` | `0.75` | Alpha |
-| `--dwc-focus-ring-width` | `2px` | Ring width |
-| `--dwc-focus-ring-gap` | `2px` | Gap between component and ring |
-
-Per-palette: `--dwc-focus-ring-{palette}` — double shadow creating visible gap between component edge and ring.
-
-## Palette Configuration
-
-Two tokens per palette (+ optional seed):
-
-| Token | Range | Description |
-|-------|-------|-------------|
-| `--dwc-color-{palette}-h` | 0–360 | Hue |
-| `--dwc-color-{palette}-s` | 0%–100% | Saturation |
-| `--dwc-color-{palette}-seed` | any CSS color | Direct override (hex, rgb, oklch, lab) |
-
-**`-c` does not exist.** Text contrast is automatic via OKLCH at 0.59 lightness threshold.
-
-When `-seed` is set, it overrides `-h` and `-s`. The engine extracts hue/chroma from the seed.
-
-## Mode-Aware Colors
-
-| Token | Light mode | Dark mode |
-|-------|-----------|----------|
-| `--dwc-color-black` | Near-black | Near-white |
-| `--dwc-color-white` | Near-white | Near-black |
-| `--dwc-color-body-text` | Uses black | Uses white |
-
-These are **NOT static** — they flip with mode.
-
-## Dark Mode Behavior
-
-Shade lightness is **absolute** and does **not** invert:
-- Step 5 is always darkest in both light and dark mode
-- Step 95 is always lightest in both modes
-- Mode adaptation happens in the **variations layer** (semantic tokens), not the palette itself
-
-What adapts automatically:
-- Semantic tokens (`-dark`, `-light`, `-alt`)
-- Text contrast tokens (different lightness floors per mode)
-- Surfaces (`--dwc-surface-1/2/3`)
-- Borders, shadows, focus rings
-- Black/white
-
-Write CSS once — it works in every theme.
-
-## Quick Reference
+### Hue rotation
 
 ```
---dwc-color-{palette}-{5..95}              shade (absolute lightness)
---dwc-color-{palette}-text-{5..95}         surface-safe text on shade
---dwc-color-on-{palette}-text-{5..95}      on-palette text on shade
---dwc-color-{palette}                      semantic normal
---dwc-color-{palette}-dark                 semantic active
---dwc-color-{palette}-light                semantic hover
---dwc-color-{palette}-alt                  semantic accent
---dwc-color-{palette}-tint                 seed at 12% opacity
---dwc-color-{palette}-text                 text on normal
---dwc-color-{palette}-text-dark            text on active
---dwc-color-{palette}-text-light           text on hover
---dwc-color-{palette}-text-alt             text on alt
---dwc-color-on-{palette}-text              inverted text
---dwc-color-on-{palette}-text-dark         inverted dark
---dwc-color-on-{palette}-text-light        inverted light
---dwc-color-on-{palette}-text-alt          inverted alt
---dwc-border-color-{palette}               border color
---dwc-border-color-{palette}-emphasis      stronger border
---dwc-focus-ring-{palette}                 focus ring (gap pattern)
---dwc-color-{palette}-h                    hue config
---dwc-color-{palette}-s                    saturation config
---dwc-color-{palette}-seed                 direct color override
+--dwc-color-hue-rotate   default: 3 (degrees)
 ```
 
-Palettes: `default`, `primary`, `success`, `warning`, `danger`, `info`, `gray`
+The palette generator applies a subtle hue rotation across steps. Darker shades shift slightly warm while lighter shades shift slightly cool. Set to 0 to disable.
+
+### Generated variables per step
+
+For each step, three variables are produced:
+
+| Variable Pattern | Description |
+|---|---|
+| `--dwc-color-{name}-{step}` | the palette shade at that step |
+| `--dwc-color-{name}-text-{step}` | a surface-safe text color derived from that step (WCAG AA) |
+| `--dwc-color-on-{name}-text-{step}` | text color for use ON the shade as a background (auto-flips light/dark) |
+
+### Additional generated variables
+
+| Variable Pattern | Description |
+|---|---|
+| `--dwc-color-{name}-tint` | the seed color at 12% opacity, for subtle highlight backgrounds |
+| `--dwc-border-color-{name}` | mode-aware border color tinted with the palette hue |
+| `--dwc-border-color-{name}-emphasis` | stronger mode-aware border color |
+| `--dwc-focus-ring-{name}` | focus ring shadow for the palette |
+
+### Variation step mapping
+
+DWC v2 has three variation groups (`normal`, `dark`, `light`) plus an `alt` token. The mapping per palette:
+
+Primary:
+
+```
+--dwc-color-primary-dark:  var(--dwc-color-primary-45);
+--dwc-color-primary:       var(--dwc-color-primary-50);
+--dwc-color-primary-light: var(--dwc-color-primary-55);
+--dwc-color-primary-alt:   var(--dwc-color-primary-tint);
+
+--dwc-color-primary-text-dark:  var(--dwc-color-primary-text-40);
+--dwc-color-primary-text:       var(--dwc-color-primary-text-45);
+--dwc-color-primary-text-light: var(--dwc-color-primary-text-50);
+
+--dwc-color-on-primary-text-dark:  var(--dwc-color-on-primary-text-45);
+--dwc-color-on-primary-text:       var(--dwc-color-on-primary-text-50);
+--dwc-color-on-primary-text-light: var(--dwc-color-on-primary-text-55);
+--dwc-color-on-primary-text-alt:   var(--dwc-color-primary-text);
+```
+
+Other palettes follow the same step pattern.
+
+### Global colors
+
+| Variable | Description |
+|---|---|
+| `--dwc-color-black` | Near-black in light mode, near-white in dark mode. |
+| `--dwc-color-white` | Near-white in light mode, near-black in dark mode. |
+| `--dwc-color-body-text` | Default body text color (uses `--dwc-color-black`). |

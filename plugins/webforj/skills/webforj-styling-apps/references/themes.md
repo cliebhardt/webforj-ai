@@ -1,136 +1,133 @@
-# Themes
+# DWC Themes
 
-## Global Token Overrides
+**Preference, per the skill's Hard rule 6:** always prefer overriding the built-in themes (`light` at `:root`, `dark` or `dark-pure` under their `html[data-app-theme="..."]` selector) over creating a new custom theme. Only define a custom theme when overriding the built-ins cannot express the requested behavior.
 
-**`resources/static/css/app.css`:**
+## Universal facts (DWC v1 and v2)
 
-```css
-:root {
-  --dwc-color-primary-h: 210;
-  --dwc-color-primary-s: 80%;
-  --dwc-font-family: "Inter", "Segoe UI", sans-serif;
-}
+### Built-in app themes
+
 ```
+light        bright background, default
+dark         dark background tinted with the primary color
+dark-pure    fully neutral dark theme based on gray tones
+system       follow the OS preference
+```
+
+Apply with `@AppTheme` or `App.setTheme()`. The theme name must be one of `system`, `light`, `dark`, `dark-pure`, or a custom theme name.
 
 ```java
-@StyleSheet("ws://css/app.css")
-public class MyApp extends App { }
+@AppTheme("dark-pure")
+class MyApp extends App {
+  // app code
+}
+
+// or programmatically
+App.setTheme("dark-pure");
 ```
 
-## Simple Palette Reskin (two tokens per palette)
+### Override the light theme
 
-Override just `-h` and `-s`. All shades, semantic tokens, text contrast,
-borders, and focus rings recalculate automatically via OKLCH.
+Both versions document overriding the light theme by redefining CSS custom properties at `:root`.
 
 ```css
 :root {
-  --dwc-color-primary-h: 211;
-  --dwc-color-primary-s: 87%;
-
-  --dwc-color-success-h: 150;
-  --dwc-color-success-s: 87%;
-
-  --dwc-color-danger-h: 345;
-  --dwc-color-danger-s: 87%;
-
-  --dwc-color-warning-h: 60;
-  --dwc-color-warning-s: 87%;
-
-  --dwc-color-info-h: 359;
-  --dwc-color-info-s: 87%;
-
-  --dwc-color-default-h: var(--dwc-color-primary-h);
-  --dwc-color-default-s: 10%;
+  --dwc-color-primary-h: 215;
+  --dwc-color-primary-s: 100%;
 }
 ```
 
-This is all you need for a color reskin. Works in light, dark, and dark-pure.
+### Override built-in dark themes
 
-## Seed Override (any CSS color)
-
-Instead of `-h` / `-s`, provide a direct color. The engine extracts hue/chroma via OKLCH:
+Both versions use attribute selectors on the `<html>` element:
 
 ```css
-:root {
-  --dwc-color-primary-seed: #6366f1;
-  --dwc-color-success-seed: oklch(0.65 0.2 153);
-  --dwc-color-danger-seed: rgb(239, 68, 68);
+html[data-app-theme="dark"] {
+  --dwc-color-primary-s: 80%;
 }
 ```
 
-Accepts any CSS color: hex, rgb, hsl, oklch, lab, etc. Overrides `-h` and `-s` when set.
+### Custom themes
 
-## Creating Custom Themes
+Both versions define custom themes with `html[data-app-theme='THEME_NAME']`:
 
 ```css
-html[data-app-theme='custom-name'] {
+html[data-app-theme="new-theme"] {
   --dwc-color-primary-h: 280;
   --dwc-color-primary-s: 100%;
 }
+```
 
-/* For dark themes */
-html[data-app-theme='custom-dark'] {
+Apply with `@AppTheme("new-theme")` or `App.setTheme("new-theme")`. Custom themes can coexist with the default ones, and can be switched dynamically at runtime.
+
+### Component themes
+
+Components support seven theme attributes drawn from the palettes: `default`, `primary`, `success`, `warning`, `danger`, `info`, `gray`. Each component documents its supported themes under its own **Styling → Themes** section.
+
+## DWC v1 only
+
+### `:root` example with `-c`
+
+A DWC v1 `:root` override includes the contrast threshold variable:
+
+```css
+:root {
+  --dwc-color-primary-h: 215;
+  --dwc-color-primary-s: 100%;
+  --dwc-color-primary-c: 50;
+  --dwc-font-size: var(--dwc-font-size-m);
+}
+```
+
+### Dark theme example
+
+```css
+html[data-app-theme="dark"] {
+  --dwc-color-primary-s: 9%;
+  --dwc-color-white: hsl(210, 17%, 82%);
+}
+```
+
+### Custom theme with `-c`
+
+```css
+html[data-app-theme="new-theme"] {
+  --dwc-color-primary-h: 280;
+  --dwc-color-primary-s: 100%;
+  --dwc-color-primary-c: 60;
+}
+```
+
+## DWC v2 only
+
+### `:root` example without `-c`
+
+A DWC v2 `:root` override uses only `-h`, `-s`, and a font-size variable:
+
+```css
+:root {
+  --dwc-color-primary-h: 215;
+  --dwc-color-primary-s: 100%;
+  --dwc-font-size: var(--dwc-font-size-l);
+}
+```
+
+### Dark theme example
+
+```css
+html[data-app-theme="dark"] {
+  --dwc-color-primary-s: 80%;
+}
+```
+
+### Custom dark theme
+
+To make a DWC v2 custom theme dark, set `--dwc-dark-mode: 1` and `color-scheme: dark` on the same selector:
+
+```css
+html[data-app-theme="new-dark-theme"] {
   --dwc-dark-mode: 1;
-  color-scheme: dark;
   --dwc-color-primary-h: 280;
   --dwc-color-primary-s: 100%;
+  color-scheme: dark;
 }
 ```
-
-## Full Production Theme
-
-For precise control over which shades map to semantic states, remap semantic tokens to specific shade numbers.
-
-### Palette config + semantic remapping
-
-```css
-:root {
-  --dwc-color-primary-h: 211;
-  --dwc-color-primary-s: 87%;
-
-  /* Remap semantic tokens to specific shades */
-  --dwc-color-primary-dark: var(--dwc-color-primary-20);
-  --dwc-color-on-primary-text-dark: var(--dwc-color-primary-text-20);
-  --dwc-color-primary: var(--dwc-color-primary-25);
-  --dwc-color-on-primary-text: var(--dwc-color-primary-text-25);
-  --dwc-color-primary-light: var(--dwc-color-primary-30);
-  --dwc-color-on-primary-text-light: var(--dwc-color-primary-text-30);
-}
-```
-
-### Dark mode text readability
-
-Dark backgrounds need different shade mappings for readable text. This is
-the **only** valid use of theme-specific selectors:
-
-```css
-html[data-app-theme~='dark'],
-html[data-app-theme~='dark-pure'] {
-  --dwc-color-primary-text-dark: var(--dwc-color-primary-30);
-  --dwc-color-primary-text: var(--dwc-color-primary-35);
-  --dwc-color-primary-text-light: var(--dwc-color-primary-40);
-}
-
-html[data-app-theme~='dark-pure'] {
-  --dwc-color-default-s: 0%;
-}
-```
-
-### What each section does
-
-| Section | Purpose | When to use |
-|---------|---------|-------------|
-| Palette `-h`/`-s` | Sets the base hue and saturation for each palette | Always — this is the foundation |
-| Seed override | Direct color input, engine extracts hue/chroma | When you have exact brand colors |
-| Semantic remapping | Maps `-dark`/normal/`-light` to specific shade numbers | When you want precise control over button/link colors |
-| On-text remapping | Pairs each semantic token with its contrast text | Always include alongside semantic remapping |
-| Text color tokens | Controls text rendered in palette colors (links, labels) | When default text shades don't look right |
-| Dark mode text | Adjusts text shades for dark backgrounds | When text is hard to read in dark theme |
-
-### Rules
-
-- Every value references a `var(--dwc-color-*)` shade token — never hardcode
-- Shade numbers are always multiples of 5
-- The `dark` and `dark-pure` selectors use `~=` (contains) not `=`
-- Only remap tokens you need — the system has sensible defaults
-- **`-c` does not exist** — text contrast is automatic via OKLCH

@@ -1,0 +1,112 @@
+{
+  "skill_name": "webforj-styling-apps",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a webforJ app whose `pom.xml` declares `<webforj.version>25.10</webforj.version>`. Reskin the primary palette to a deeper blue (around 220 hue, 95% saturation, contrast threshold 60) by editing the app's stylesheet. Do not touch any other palette.",
+      "expected_output": "The agent identifies the project as DWC v1 (webforJ 25 and prior), edits the project's existing app stylesheet and overrides the primary palette config tokens at `:root`. It uses the three DWC v1 palette config variables `--dwc-color-primary-h`, `--dwc-color-primary-s`, and `--dwc-color-primary-c` with the requested values. It validates the generated CSS via `webforj-mcp:styles_validate_tokens` with the resolved version before declaring done.",
+      "expectations": [
+        "Resolves the target webforJ version from `pom.xml` as `25.10` (or `25.x` major) and routes the work as DWC v1",
+        "Edits the project's existing app stylesheet (or creates a new one inside the project's existing CSS load mechanism, NOT inventing a new wiring path)",
+        "Overrides ONLY the primary palette at `:root` using `--dwc-color-primary-h`, `--dwc-color-primary-s`, AND `--dwc-color-primary-c` (the contrast-threshold token is documented for DWC v1 and the prompt explicitly asks for it)",
+        "Sets `--dwc-color-primary-c` to a numeric value in the range 0-100 (the prompt specifies 60)",
+        "Does NOT introduce `--dwc-color-primary-seed` for this DWC v1 task (`-seed` is documented in DWC v2 only)",
+        "Calls `webforj-mcp:styles_validate_tokens` with the resolved `webforjVersion` and the generated CSS content before declaring the task done",
+        "Does NOT hardcode any raw hex / rgb / hsl color in the stylesheet (palette config tokens only)",
+        "Does NOT modify other palettes (`success`, `warning`, `danger`, `info`, `default`, `gray`)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I have a webforJ Spring Boot app whose `pom.xml` declares `<webforj.version>26.00</webforj.version>`. Set the primary brand color to `#6366f1` exactly (no hue/saturation conversion). Then add a custom dark theme called `corporate-dark` that uses the same brand color.",
+      "expected_output": "The agent identifies the project as DWC v2 (webforJ 26+), uses `--dwc-color-primary-seed` at `:root` for the exact color, and adds a custom dark theme via `html[data-app-theme='corporate-dark']` with `--dwc-dark-mode: 1`, `color-scheme: dark`, and the same seed. It validates the generated CSS via the MCP tool with the resolved version.",
+      "expectations": [
+        "Resolves the target webforJ version from `pom.xml` as `26.00` (or `26.x` major) and routes the work as DWC v2",
+        "Sets `--dwc-color-primary-seed: #6366f1` at `:root` (DWC v2's documented direct-color override)",
+        "Defines the custom theme with the exact selector form `html[data-app-theme='corporate-dark']` (or `html[data-app-theme=\"corporate-dark\"]`)",
+        "Inside the custom-dark selector, sets BOTH `--dwc-dark-mode: 1` AND `color-scheme: dark` (the two flags DWC v2 requires to make a custom theme dark)",
+        "Reuses the same `#6366f1` brand color inside the custom-dark theme (via the seed token, NOT by re-deriving hue/saturation)",
+        "Does NOT introduce `--dwc-color-primary-c` (the contrast-threshold token does not exist in DWC v2)",
+        "Calls `webforj-mcp:styles_validate_tokens` with the resolved `webforjVersion` and the generated CSS before declaring the task done",
+        "Does NOT hardcode `#6366f1` outside the seed assignment (no raw color inside component styles)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I have a webforJ app whose `pom.xml` declares `<webforj.version>26.00</webforj.version>`. Override the background of `dwc-button` to use a muted shade from the primary palette across the whole app.",
+      "expected_output": "The agent first calls `webforj-mcp:styles_get_component` with `webforjVersion: \"26.00\"` and `name: 'dwc-button'` (or `'Button'`) to look up the real CSS variables exposed by the component for that version. It writes a CSS rule on the `dwc-button` tag selector that sets `--dwc-button-background` to a `var(--dwc-color-*)` reference (NOT a raw hex). It then validates the CSS via `webforj-mcp:styles_validate_tokens` with the same `webforjVersion`.",
+      "expectations": [
+        "Calls `webforj-mcp:styles_get_component` with `webforjVersion: \"26.00\"` (the full major.minor string, NOT bare `\"26\"`) and `name: 'Button'` or `name: 'dwc-button'` BEFORE writing the CSS",
+        "Passes a non-empty `reasoning` string to every styling-MCP tool call (it is required by the augmented-fields contract)",
+        "The generated CSS sets `--dwc-button-background` inside a `dwc-button { ... }` rule (or equivalent tag-scoped selector)",
+        "The value of `--dwc-button-background` is a `var(--dwc-color-*)` reference, NOT a raw hex / rgb / hsl color",
+        "Calls `webforj-mcp:styles_validate_tokens` with `webforjVersion: \"26.00\"` and the generated CSS content before declaring the task done",
+        "Does NOT use `::part()` for setting the background, since `--dwc-button-background` is a documented CSS variable on the component"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "On my webforJ 26.00 app I want the dark theme to use a softer green for success messages. Don't add a new theme.",
+      "expected_output": "The agent honors the no-new-theme constraint and the skill's preference for overriding built-in themes. It overrides `html[data-app-theme=\"dark\"]` (the documented dark-theme selector) with `--dwc-color-success-h` and `--dwc-color-success-s` (or `--dwc-color-success-seed`) for a softer green. It does NOT introduce a new `html[data-app-theme='your-name']` custom theme. It validates the generated CSS via MCP.",
+      "expectations": [
+        "Resolves the target webforJ version as `26.00` (DWC v2)",
+        "Modifies the success palette inside `html[data-app-theme=\"dark\"] { ... }` (the documented selector for overriding the built-in dark theme), NOT inside `:root`",
+        "Sets `--dwc-color-success-h` and `--dwc-color-success-s` (or `--dwc-color-success-seed`) — palette config tokens, NOT raw hex colors",
+        "Does NOT introduce a new custom theme via `html[data-app-theme='soft-success']` or any other novel `data-app-theme` value (the prompt explicitly forbids it)",
+        "Does NOT introduce `--dwc-color-success-c` (DWC v2 has no `-c`)",
+        "Does NOT modify any palette other than `success`",
+        "Calls `webforj-mcp:styles_validate_tokens` with `webforjVersion: \"26.00\"` and the generated CSS"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "On my webforJ 26.00 app, add a new utility class `.section-pad` that gives a section roughly 24 px of padding all around. Edit the app stylesheet.",
+      "expected_output": "The agent uses a `--dwc-space-*` token instead of hardcoding `24px`. It calls `webforj-mcp:styles_list_tokens` with `prefix: --dwc-space-` to see the available spacing tokens for the version, picks the closest one, writes the rule, and validates.",
+      "expectations": [
+        "Calls `webforj-mcp:styles_list_tokens` with `webforjVersion: \"26.00\"` and `prefix: \"--dwc-space-\"` (or equivalently broad enough to return spacing tokens) BEFORE writing the rule",
+        "The generated `.section-pad` rule uses `padding: var(--dwc-space-*)` with a real spacing token name returned by the MCP tool, NOT a hardcoded `24px`",
+        "Does NOT hardcode any raw `px`, `rem`, or `em` length in the new rule",
+        "Calls `webforj-mcp:styles_validate_tokens` with the generated CSS before declaring the task done",
+        "Does NOT invent a non-existent spacing token (any `--dwc-space-*` name MUST be one returned by `styles_list_tokens`)"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "On my webforJ 26.00 app, change the visual appearance of an element inside the `dwc-table` shadow DOM that has no exposed CSS variable for it (for example, the styling of a specific cell or row part).",
+      "expected_output": "The agent calls `webforj-mcp:styles_get_component` for `dwc-table` with `webforjVersion: \"26.00\"`, sees that `dwc-table` exposes shadow parts but no CSS variable for the requested visual, and writes a `dwc-table::part(...)` rule using a part name returned by the MCP tool. The generated CSS uses DWC tokens (e.g. `var(--dwc-color-*)`) for any color values and avoids any forbidden sizing properties on table parts.",
+      "expectations": [
+        "Calls `webforj-mcp:styles_get_component` with `webforjVersion: \"26.00\"` and `name: 'dwc-table'` BEFORE writing CSS",
+        "Uses `dwc-table::part(<name>)` with a part name returned by the MCP tool (no invented part names)",
+        "Any color value inside the rule references a `--dwc-color-*` token via `var(...)`, NOT a raw hex",
+        "Does NOT set `height`, `padding`, `margin`, `min-height`, `max-height`, `line-height`, or `width` on a table part (table sizing is managed by Java APIs)",
+        "Calls `webforj-mcp:styles_validate_tokens` with the generated CSS before declaring the task done"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Reskin my webforJ 26.00 app to use this primary brand color: HSL(220, 70%, 50%). I want it to apply across the whole app.",
+      "expected_output": "On DWC v2, the seed system regenerates all 19 shades, semantic variations, text-contrast tokens, borders, and focus rings from a single seed color. The canonical solution is a one-line `--dwc-color-primary-seed: hsl(220, 70%, 50%)` at `:root` (or, equivalently, `--dwc-color-primary-h: 220` + `--dwc-color-primary-s: 70%`). Calling `webforj-mcp:create_theme` with `primaryColor: [220, 70, 50]` is also acceptable. What is NOT acceptable: hand-rolling variation tokens, or hardcoding a hex color anywhere outside the seed assignment.",
+      "expectations": [
+        "Resolves the target webforJ version from `pom.xml` as `26.00` (DWC v2)",
+        "Produces a reskin that uses ONE of these documented approaches: (a) `--dwc-color-primary-seed: hsl(220, 70%, 50%)` at `:root`, OR (b) `--dwc-color-primary-h: 220` and `--dwc-color-primary-s: 70%` at `:root`, OR (c) a `webforj-mcp:create_theme` call with `webforjVersion: \"26.00\"` and `primaryColor: [220, 70, 50]`",
+        "Does NOT hand-write variation tokens (`--dwc-color-primary-dark`, `--dwc-color-primary-light`, `--dwc-color-primary-text-*`, etc.) when the seed or `-h`/`-s` regenerates them automatically",
+        "Does NOT hardcode a raw hex / rgb / hsl color anywhere outside the seed assignment (the only place a literal color is allowed is the seed itself)",
+        "Does NOT introduce `--dwc-color-primary-c` (DWC v2 has no `-c`)",
+        "Calls `webforj-mcp:styles_validate_tokens` with `webforjVersion: \"26.00\"` and the generated CSS before declaring the task done"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "On my webforJ 26.00 app, mark overdue rows in a `dwc-table` with a red background.",
+      "expected_output": "The agent uses the documented part-provider mechanism: a Java `setRowPartProvider` returns a part name like `\"row-overdue\"` for matching rows. CSS targets `dwc-table::part(row-overdue)` and uses a `var(--dwc-color-danger-*)` token for the red background. The agent does not set forbidden sizing properties on the table part and validates the CSS.",
+      "expectations": [
+        "Adds Java code that calls `table.setRowPartProvider(...)` returning a `List<String>` containing a part name (e.g. `\"row-overdue\"`) when the row matches the overdue condition, otherwise an empty list",
+        "Adds a CSS rule `dwc-table::part(row-overdue) { ... }` (or whatever part name the Java code returned)",
+        "The CSS rule's color uses a `var(--dwc-color-danger-*)` token (e.g. `--dwc-color-danger`, `--dwc-color-danger-alt`), NOT a raw hex / rgb / hsl",
+        "Does NOT set `height`, `padding`, `margin`, `min-height`, `max-height`, `line-height`, or `width` on the table part",
+        "Calls `webforj-mcp:styles_validate_tokens` with the generated CSS before declaring the task done",
+        "Does NOT recreate row-coloring logic in CSS via attribute selectors when the documented mechanism is the Java part provider"
+      ]
+    }
+  ]
+}

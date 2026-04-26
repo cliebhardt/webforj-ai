@@ -20,13 +20,25 @@ table.setBordersVisible(EnumSet.of(
 
 ### Visual styling via `::part()`
 
-The table exposes 50+ shadow parts for visual customization (colors,
+The table exposes many shadow parts for visual customization (colors,
 backgrounds, borders, fonts, etc.).
 
 **Avoid on table parts:** `height`, `padding`, `margin`, `min-height`,
 `max-height`, `line-height`, `width` — sizing is managed by the Java API.
 
-The table has 50+ parts — run the component script to get the full list.
+For the complete list of parts on `dwc-table` for the resolved
+`webforjVersion`, call:
+
+```
+webforj-mcp:styles_get_component
+  webforjVersion: <resolved>
+  reasoning: <why>
+  name: dwc-table
+```
+
+The response lists every part name, CSS variable, slot, and reflected
+attribute the component exposes for that version. Do not assume part
+names from memory; the catalog can change between major versions.
 
 ### Borders and stripes via Java
 
