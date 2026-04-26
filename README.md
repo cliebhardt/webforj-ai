@@ -530,6 +530,7 @@ Remote, hosted at `https://mcp.webforj.com/mcp`. Exposes these tools:
 
 | Skill | What it does |
 | --- | --- |
+| [`webforj-adding-servlets`](skills/webforj-adding-servlets/SKILL.md) | Add custom HTTP endpoints to a webforJ app for REST APIs, webhooks, or third-party servlet integrations. Covers Spring REST controllers, remapping webforJ to a sub-path, and proxying custom servlets through the webforJ config for plain and Spring projects. |
 | [`webforj-creating-components`](skills/webforj-creating-components/SKILL.md) | Build reusable webforJ components from core components, third-party Web Component libraries, or plain JavaScript libraries. Covers `ElementComposite` wrappers, component extensions, and page-level utilities. |
 | [`webforj-handling-timers-and-async`](skills/webforj-handling-timers-and-async/SKILL.md) | Schedule timers, periodic intervals, debounced actions, and background async work using webforJ's thread-safe primitives instead of raw timers or threads. Covers polling, search-as-you-type debouncing, long-running tasks with live progress updates, and async services for plain and Spring projects. |
 | [`webforj-localizing-apps`](skills/webforj-localizing-apps/SKILL.md) | Add locale and translation support to a webforJ app. Covers supported locales, browser auto-detect, `messages.properties` bundles, runtime language switching, and custom translation backends for plain and Spring projects. |
