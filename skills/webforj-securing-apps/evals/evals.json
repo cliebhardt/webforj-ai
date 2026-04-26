@@ -1,0 +1,140 @@
+{
+  "skill_name": "webforj-securing-apps",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add login to my webforJ Spring Boot app. I want users to log in before they can see any page, except the login page itself. Use a simple in-memory user `user/password` for now. Show me everything I need to add.",
+      "expected_output": "The agent adds `spring-boot-starter-security` to `pom.xml`, writes a `@Configuration @EnableWebSecurity SecurityConfig` that exposes a `SecurityFilterChain` built with `WebforjSecurityConfigurer.webforj()` and configures `loginPage(LoginView.class)` plus `accessDeniedPage(...)` plus `logout()`. It writes a `LoginView` annotated with `@AnonymousAccess` (from `com.webforj.router.security.annotation`) that uses the `Login` component, calls `setAction(...)` with the same path as the route, and reads `?error` and `?logout` query params. It writes an `AccessDenyView`. The user prompt asked for an in-memory user, so the agent wires up an in-memory user store (the canonical sample uses `InMemoryUserDetailsManager` + a `PasswordEncoder` bean such as `BCryptPasswordEncoder`, but other in-memory wirings -- a custom `AuthenticationProvider`, a `MapReactiveUserDetailsService`, or a different `PasswordEncoder` like `Pbkdf2PasswordEncoder` / `Argon2PasswordEncoder` / `PasswordEncoderFactories.createDelegatingPasswordEncoder()` -- are all acceptable as long as the configuration is internally consistent and the user `user/password` actually authenticates).",
+      "expectations": [
+        "Adds the Spring Security starter dependency `org.springframework.boot:spring-boot-starter-security` to `pom.xml`",
+        "Writes a `@Configuration @EnableWebSecurity` class that exposes a `SecurityFilterChain` bean built with `http.with(WebforjSecurityConfigurer.webforj(), configurer -> ...)`. Specifically uses `WebforjSecurityConfigurer.webforj()` -- NOT a hand-rolled `formLogin()` chain, NOT `httpBasic()` only.",
+        "LOAD-BEARING: The `LoginView` class is annotated with `@AnonymousAccess` (imported from `com.webforj.router.security.annotation.AnonymousAccess`). Without this annotation, secure-by-default redirects unauthenticated users away from the login page, creating an infinite redirect loop. The check FAILS if the login view has no `@AnonymousAccess`, or imports `@AnonymousAccess` from any other package.",
+        "The `LoginView` calls `setAction(...)` on its `Login` component with a path that matches its `@Route(...)` (or matches the `loginProcessingUrl` if `.loginPage(displayUrl, processingUrl)` was used). Without this the form posts nowhere and Spring never sees the credentials.",
+        "Imports `@AnonymousAccess` from `com.webforj.router.security.annotation`, NOT from any other package",
+        "Wires an authentication source that resolves the requested in-memory user `user/password`. The canonical path is a `UserDetailsService` bean backed by `InMemoryUserDetailsManager` plus a `PasswordEncoder` bean. Equivalent acceptable wirings: a custom `AuthenticationProvider`, a programmatically-configured `AuthenticationManagerBuilder.inMemoryAuthentication()`, or any other Spring-Security mechanism that produces the same in-memory `user/password` credential. The `PasswordEncoder` does NOT have to be `BCryptPasswordEncoder` -- `Pbkdf2PasswordEncoder`, `Argon2PasswordEncoder`, `SCryptPasswordEncoder`, or `PasswordEncoderFactories.createDelegatingPasswordEncoder()` are all acceptable. The user-store and the encoder must be internally consistent (passwords stored with the same encoder Spring will compare against). The check FAILS if the agent declares a `UserDetailsService` but no `PasswordEncoder` bean (Spring then refuses to start), or if the encoder used to hash the stored password differs from the one Spring uses to verify.",
+        "Does NOT invent helper methods or annotations not in the documented Spring integration (e.g. no fictional `@WebforjSecure`, no fake `WebforjAuth.configure()` methods)",
+        "Does NOT register the built-in evaluators manually (e.g. `manager.registerEvaluator(new RolesAllowedEvaluator(), 5)`). The Spring auto-configuration registers them automatically; manually registering them in a Spring app is wrong."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I have three views in my Spring webforJ app: `AboutView` should be public, `DashboardView` should require any authenticated user, `BillingView` should require the role `ACCOUNTANT`. Annotate them.",
+      "expected_output": "The agent puts `@AnonymousAccess` on `AboutView`, `@PermitAll` on `DashboardView`, and `@RolesAllowed(\"ACCOUNTANT\")` on `BillingView`. The Jakarta annotations are imported from `jakarta.annotation.security.*`, the webforJ one from `com.webforj.router.security.annotation.AnonymousAccess`.",
+      "expectations": [
+        "`AboutView` carries `@AnonymousAccess` imported from `com.webforj.router.security.annotation.AnonymousAccess`",
+        "`DashboardView` carries `@PermitAll` imported from `jakarta.annotation.security.PermitAll` (NOT from `org.springframework.security.access.annotation.Secured` or any Spring package)",
+        "`BillingView` carries `@RolesAllowed(\"ACCOUNTANT\")` imported from `jakarta.annotation.security.RolesAllowed` (NOT from any Spring package)",
+        "Does NOT use a SpEL `@RouteAccess(\"hasRole('ACCOUNTANT')\")` for the `BillingView` -- pure-role checks should use the simpler `@RolesAllowed` annotation",
+        "Does NOT introduce a custom evaluator for these straightforward role/auth gates"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "In my Spring webforJ MainLayout, add a logout icon button to the toolbar that signs the user out and sends them back to the login page.",
+      "expected_output": "The agent uses `SpringSecurityFormSubmitter.logout(\"/logout\").submit()` from `com.webforj.spring.security` inside the icon button's click handler. The endpoint URL must match what `WebforjSecurityConfigurer.logout()` configured (default `/logout`). After the form submits, Spring invalidates the session and Spring's logout success handler redirects back to the login page with `?logout` appended.",
+      "expectations": [
+        "LOAD-BEARING: Calls `com.webforj.spring.security.SpringSecurityFormSubmitter.logout(\"/logout\").submit()` (or the `/logout` URL the configurer was customized to use). Building the form by hand or calling `Router.getCurrent().navigate(\"/logout\")` does NOT trigger Spring's logout filter -- it is a GET, the logout filter only intercepts POST.",
+        "Uses an `IconButton` (or any clickable webforJ component) with an `onClick(e -> ...)` handler that calls `submit()` on the result of `SpringSecurityFormSubmitter.logout(...)`",
+        "Does NOT call `SecurityContextHolder.clearContext()` directly -- bypasses Spring's logout handlers (CSRF, remember-me cleanup, custom logout success handler)",
+        "Does NOT import a fictional `WebforjLogout` or `WebforjAuth.logout()` helper -- the documented helper is `SpringSecurityFormSubmitter`"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I want my webforJ Spring app to require authentication on every route by default. I should only have to mark public pages explicitly. Is that the default, or do I need to turn it on?",
+      "expected_output": "The agent tells the user that `webforj.security.secure-by-default` defaults to `true` in Spring projects, so the behavior is already what the user wants -- nothing to add. If the user wants to be self-documenting, they CAN add `webforj.security.secure-by-default=true` explicitly to `application.properties`, but it is not required. The agent reminds the user that `@AnonymousAccess` is mandatory on the login view (and any other intentionally public route) to avoid a redirect loop. The wrong key name -- `webforj.secure-by-default`, `spring.webforj.secure`, `webforj.security.default=secure` -- is rejected.",
+      "expectations": [
+        "LOAD-BEARING: Identifies the property as `webforj.security.secure-by-default`. The check FAILS if the agent invents another key name (e.g. `webforj.secure-by-default`, `spring.webforj.secure=true`, `webforj.security.default=secure`) -- only the documented prefix `webforj.security.` plus property `secure-by-default` is correct.",
+        "States that this property defaults to `true` in webforJ Spring projects, so the user does NOT have to add anything to get the requested behavior. Equivalent acceptable phrasing: 'this is already the default', 'you don't need to enable it', 'it ships on'.",
+        "If the agent suggests adding the property, it must be `webforj.security.secure-by-default=true` (correct value) and framed as optional / self-documenting rather than required. The check FAILS if the agent claims the property MUST be added or the behavior will not work.",
+        "Reminds the user that `@AnonymousAccess` is required on the login view (and any other intentionally public route) so they don't get caught by the same redirect loop that kicks in regardless of how secure-by-default got set",
+        "Does NOT recommend changing every existing view to add `@PermitAll` -- the whole point of secure-by-default is that unannotated routes already require authentication",
+        "Does NOT recommend implementing a custom `RouteSecurityConfiguration` -- that path is for custom plain webforJ projects, not Spring apps that already auto-configure security"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "In my Spring webforJ app, lock `/reports/advanced` so only ADMINs can see it, OR users who have BOTH the ANALYST role AND the `REPORTS:ADVANCED` authority. I want the rule on the route, not in a custom evaluator.",
+      "expected_output": "The agent annotates the view with `@RouteAccess(\"hasRole('ADMIN') or (hasRole('ANALYST') and hasAuthority('REPORTS:ADVANCED'))\")`, imported from `com.webforj.spring.security.annotation.RouteAccess`. Pure-role-and-authority logic on a single route is the documented use case for SpEL.",
+      "expectations": [
+        "Uses `@RouteAccess` imported from `com.webforj.spring.security.annotation.RouteAccess`",
+        "The SpEL expression uses ONLY documented helpers: `hasRole(...)`, `hasAnyRole(...)`, `hasAuthority(...)`, `hasAnyAuthority(...)`, `isAuthenticated()`, plus boolean operators `and`, `or`, `!`. Specifically does NOT call invented helpers like `inGroup(...)`, `belongsTo(...)`, or `hasPermission(...)` (the last is a Spring built-in that is NOT in the documented webforJ list and requires a `PermissionEvaluator`).",
+        "The expression matches the requested logic: ADMIN role grants access OR (ANALYST role AND `REPORTS:ADVANCED` authority) grants access. Equivalent restatements (`hasAnyRole('ADMIN') or ...`) are fine; using `hasAuthority('ADMIN')` instead of `hasRole('ADMIN')` is WRONG because `hasAuthority` does NOT auto-prefix `ROLE_`.",
+        "Does NOT spawn a custom `RouteSecurityEvaluator` for this -- the prompt explicitly asks for the rule on the route, and SpEL is the documented choice for boolean role/authority expressions",
+        "Does NOT also stack `@RolesAllowed` on the same route in a way that contradicts the SpEL expression"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "In my Spring webforJ app, I want a route at `/users/:userId/edit` that only the user themselves can open -- no one else, not even other authenticated users. Wire up the security so the URL is checked against the logged-in user.",
+      "expected_output": "The agent defines a custom `@RequireOwnership(\"userId\")` annotation, writes an `OwnershipEvaluator` that implements `RouteSecurityEvaluator`, is annotated `@RegisteredEvaluator(priority = 10)`, and reads the route parameter via `context.getRouteParameters().get(paramName)` and the principal via `securityContext.getPrincipal()`. The view stacks `@RolesAllowed(\"USER\")` (composable, delegates to the chain) with `@RequireOwnership(\"userId\")` so both checks run.",
+      "expectations": [
+        "Defines a custom annotation with `@Target(ElementType.TYPE)` and `@Retention(RetentionPolicy.RUNTIME)` (the documented retention for security annotations)",
+        "Writes a class that implements `com.webforj.router.security.RouteSecurityEvaluator` with `supports(Class<?>)` returning `true` only when the route carries the custom annotation, AND `evaluate(...)` containing the per-resource check",
+        "LOAD-BEARING: The evaluator class is annotated `@RegisteredEvaluator(priority = 10)` (or any value `>= 10`) imported from `com.webforj.spring.security.annotation.RegisteredEvaluator`. Without this annotation Spring does not register the bean and the evaluator never runs. The check FAILS if priority is set in the framework-reserved range 0-9.",
+        "Reads the URL parameter via `context.getRouteParameters().get(paramName)` -- NOT via `request.getParameter(...)` (no HttpServletRequest in scope) and NOT via `Router.getCurrent().getCurrentRoute()` (wrong API for the security evaluator surface)",
+        "After the ownership check passes, the evaluator delegates with `chain.evaluate(routeClass, context, securityContext)` rather than returning `RouteAccessDecision.grant()`. Returning `grant()` ends the chain and any later evaluators stacked on the same route never run.",
+        "LOAD-BEARING: The view annotates with `@RolesAllowed(\"USER\")` (or `@RouteAccess(\"isAuthenticated()\")`) AND `@RequireOwnership(\"userId\")`. Stacking with `@PermitAll` is wrong because `@PermitAll` is terminal -- it grants immediately and the custom evaluator never runs.",
+        "Returns `RouteAccessDecision.deny(reason)` (not just `null` or a thrown exception) when the ownership check fails, with a human-readable reason",
+        "If authentication is missing, returns `RouteAccessDecision.denyAuthentication()` so the user is redirected to login (rather than the access-denied page)"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "In my Spring webforJ DashboardView, show the username at the top, and only render an Admin Panel button if the user has the ADMIN role.",
+      "expected_output": "The agent reads `Authentication authentication = SecurityContextHolder.getContext().getAuthentication()` (Spring), calls `authentication.getName()` for the username, and iterates `getAuthorities()` looking for `ROLE_ADMIN` to decide whether to add the Admin Panel button. The view is `@PermitAll` (or unannotated with secure-by-default) so the user is guaranteed to be authenticated when the constructor runs.",
+      "expectations": [
+        "Imports `org.springframework.security.core.Authentication` and `org.springframework.security.core.context.SecurityContextHolder`",
+        "Reads the username via `authentication.getName()` (NOT via `authentication.getPrincipal().toString()` -- that returns whatever the principal's `toString()` happens to produce; with `UserDetails` and OAuth2 principals it is generally not a clean username)",
+        "LOAD-BEARING: When checking for ADMIN, compares against the granted authority string `ROLE_ADMIN` (Spring auto-prefixes role-based authorities with `ROLE_`). Comparing against `ADMIN` directly via `authority.equals(\"ADMIN\")` does NOT match. Equivalent acceptable approaches: iterate `authorities.stream().anyMatch(a -> a.getAuthority().equals(\"ROLE_ADMIN\"))`, or call a Spring helper that internally does the prefixing.",
+        "The view itself is annotated `@PermitAll` (or relies on `secure-by-default=true` being set elsewhere) so the user is guaranteed to be authenticated when the constructor runs and `getAuthentication()` is non-null",
+        "Does NOT use the plain `SecurityManager.getCurrent().getSecurityContext()` API -- that is the custom plain path; this Spring app should use `SecurityContextHolder`"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "I have a plain webforJ project (no Spring Boot). I need basic security: a login page, an access-denied page, two test users (`user/password` with role USER, `admin/admin` with USER and ADMIN). Wire everything from scratch.",
+      "expected_output": "The agent implements `SecurityConfiguration` (implements `RouteSecurityConfiguration`), `SecurityContext` (implements `RouteSecurityContext`, stores in HTTP session), `SecurityManager` (extends `AbstractRouteSecurityManager`, provides `getConfiguration()`/`getSecurityContext()` and a `login(...)/logout()` helper), and a `SecurityRegistrar` that implements `AppLifecycleListener`. The registrar registers `DenyAllEvaluator`, `AnonymousAccessEvaluator`, `PermitAllEvaluator`, `RolesAllowedEvaluator` and attaches a `RouteSecurityObserver` to `Router.getCurrent().getRenderer()`. The registrar is listed in `src/main/resources/META-INF/services/com.webforj.AppLifecycleListener`. Login and access-denied views use `@AnonymousAccess` (login) and the configured deny location.",
+      "expectations": [
+        "A class extends `com.webforj.router.security.AbstractRouteSecurityManager` and implements `getConfiguration()` and `getSecurityContext()`",
+        "A class implements `com.webforj.router.security.RouteSecurityConfiguration` and overrides at least `isEnabled()`, `getAuthenticationLocation()` (returning `Optional.of(new Location(\"/login\"))` or similar), and `getDenyLocation()`",
+        "A class implements `com.webforj.router.security.RouteSecurityContext` with `isAuthenticated()`, `getPrincipal()`, `hasRole(String)`, `hasAuthority(String)`",
+        "A class implements `com.webforj.AppLifecycleListener` and overrides `onWillRun(App)`. It is annotated with `@AppListenerPriority(1)` or another low priority so it runs early.",
+        "LOAD-BEARING: The registrar registers all four built-in evaluators -- `DenyAllEvaluator`, `AnonymousAccessEvaluator`, `PermitAllEvaluator`, `RolesAllowedEvaluator` (all from `com.webforj.router.security.evaluator`). Missing any of them silently disables the corresponding annotation -- e.g. omitting `RolesAllowedEvaluator` means `@RolesAllowed` does nothing and admin-only routes become open.",
+        "LOAD-BEARING: Creates a `RouteSecurityObserver` and attaches it via `Router.getCurrent().getRenderer().addObserver(observer)`. Without this the framework never intercepts navigation and security annotations are inert.",
+        "LOAD-BEARING: Creates the file `src/main/resources/META-INF/services/com.webforj.AppLifecycleListener` (exact path) containing the FQCN of the registrar, one per line. Without the SPI entry the registrar never runs and the entire setup is silently inactive.",
+        "Does NOT add `spring-boot-starter-security` to `pom.xml` -- this is a plain webforJ project",
+        "Does NOT use `@RegisteredEvaluator` or `@RouteAccess` -- those are Spring-only",
+        "Does NOT use `SpringSecurityFormSubmitter` for logout -- the plain manager exposes its own `logout()` helper",
+        "Does NOT use Spring's `SecurityContextHolder` -- it is empty in plain webforJ"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "In my plain webforJ app (no Spring), the login view should call my SecurityManager to authenticate. Show me the login submit handler.",
+      "expected_output": "The agent calls `SecurityManager.getCurrent().login(e.getUsername(), e.getPassword())` from inside the `Login` component's `onSubmit` handler, checks `result.isGranted()`, and on success navigates to `\"/\"` via `Router.getCurrent().navigate(new Location(\"/\"))`; on failure calls `self.setError(true)` and `self.setEnabled(true)` so the user can retry. The login view itself is `@AnonymousAccess`.",
+      "expectations": [
+        "Calls `SecurityManager.getCurrent().login(username, password)` from `onSubmit` -- using the plain custom manager API, NOT a Spring-only mechanism",
+        "Checks `result.isGranted()` (the documented `RouteAccessDecision` accessor) before navigating",
+        "On success, navigates the router (e.g. `Router.getCurrent().navigate(new Location(\"/\"))`)",
+        "On failure, surfaces the error on the `Login` component (e.g. `self.setError(true); self.setEnabled(true);`) instead of silently returning",
+        "Does NOT call `SpringSecurityFormSubmitter.login(...)` -- that helper builds a form post to Spring's auth endpoint, which does not exist in a plain webforJ project",
+        "Does NOT call `setAction(\"/login\")` on the `Login` component -- the form is handled in-process by `onSubmit`, not posted to a Spring filter",
+        "The view itself is annotated `@AnonymousAccess` (imported from `com.webforj.router.security.annotation`) so unauthenticated users can reach the login page"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "I tried to put `@PermitAll` and `@RequireOwnership(\"userId\")` on the same route to mean 'authenticated user AND owner', but the ownership check is not running. Why and how do I fix it?",
+      "expected_output": "The agent explains that `@PermitAll` is a TERMINAL evaluator: as soon as it grants access, the chain stops and any custom evaluator stacked on the same route never runs. The fix is to swap `@PermitAll` for `@RolesAllowed(\"USER\")` (a composable evaluator that delegates to the chain after granting), or for `@RouteAccess(\"isAuthenticated()\")`. Either causes `@RequireOwnership` to run after the auth/role check.",
+      "expectations": [
+        "LOAD-BEARING: Identifies `@PermitAll` as TERMINAL -- it grants and stops the chain, so `@RequireOwnership` never runs. The check FAILS if the agent claims the issue is something else (e.g. priority, missing `@Component`, wrong package).",
+        "Recommends swapping `@PermitAll` for `@RolesAllowed(\"USER\")` (or another role the user has) -- `@RolesAllowed` is composable and delegates to the chain after the role check passes, so the custom evaluator runs next",
+        "Equivalent acceptable fix: swap `@PermitAll` for `@RouteAccess(\"isAuthenticated()\")` -- also composable",
+        "Does NOT recommend bumping the custom evaluator's priority below `@PermitAll`'s (e.g. setting it to `1`). Priority changes the order, but a terminal grant still stops the chain regardless of who runs first; lowering priority into the framework-reserved range also triggers a warning.",
+        "Does NOT recommend removing `@PermitAll` and leaving the route unannotated -- behavior then depends on `secure-by-default`, and with it off the route becomes public, which is worse",
+        "Does NOT recommend chaining a Spring SpEL `@RouteAccess` AND `@PermitAll` together -- `@PermitAll` is still terminal and the SpEL still never runs"
+      ]
+    }
+  ]
+}
