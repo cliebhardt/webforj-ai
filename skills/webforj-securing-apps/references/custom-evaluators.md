@@ -1,12 +1,12 @@
 # Custom Evaluators
 
-Custom evaluators add domain-specific access logic that the built-in annotations cannot express -- ownership checks, subscription gates, IP restrictions, time windows, license checks. The pattern is: define a custom annotation, write an evaluator that handles routes carrying that annotation, and let the framework auto-discover (Spring) or manually register (plain) the evaluator.
+Custom evaluators add domain-specific access logic that the built-in annotations cannot express, ownership checks, subscription gates, IP restrictions, time windows, license checks. The pattern is: define a custom annotation, write an evaluator that handles routes carrying that annotation, and let the framework auto-discover (Spring) or manually register (plain) the evaluator.
 
 ## When you need one
 
 `@RolesAllowed("USER")` grants any authenticated user; it cannot tell whether the URL parameter `:userId` matches the logged-in user. Anything that depends on route parameters, request context, business state, or external services needs a custom evaluator.
 
-Example scenario: user `123` is logged in and navigates to `/users/456/edit`. They should NOT be allowed in -- they can only edit `/users/123/edit`. Roles do not solve this because the requested user ID is in the URL.
+Example scenario: user `123` is logged in and navigates to `/users/456/edit`. They should NOT be allowed in, they can only edit `/users/123/edit`. Roles do not solve this because the requested user ID is in the URL.
 
 ## Define the annotation
 
@@ -83,7 +83,7 @@ public class OwnershipEvaluator implements RouteSecurityEvaluator {
 }
 ```
 
-`@RegisteredEvaluator` is itself meta-annotated with `@Component` -- Spring's component scan picks it up automatically. No manual registration. The `priority` defaults to `10`; raise it to push the evaluator later in the chain.
+`@RegisteredEvaluator` is itself meta-annotated with `@Component`, Spring's component scan picks it up automatically. No manual registration. The `priority` defaults to `10`; raise it to push the evaluator later in the chain.
 
 ## Implement the evaluator (plain)
 
@@ -97,16 +97,16 @@ mgr.registerEvaluator(new OwnershipEvaluator(), 10);
 
 ### `supports(Class<?> routeClass)`
 
-Returns `true` if this evaluator should run for this route. Cheap predicate -- the framework calls it before every `evaluate(...)`. Filtering on `routeClass.isAnnotationPresent(...)` is the typical implementation.
+Returns `true` if this evaluator should run for this route. Cheap predicate, the framework calls it before every `evaluate(...)`. Filtering on `routeClass.isAnnotationPresent(...)` is the typical implementation.
 
 ### `evaluate(routeClass, context, securityContext, chain)`
 
 The body. Return one of:
 
-- `RouteAccessDecision.grant()` -- terminal. Allow access and stop the chain.
-- `RouteAccessDecision.deny(reason)` -- terminal. Block, redirect to access-denied.
-- `RouteAccessDecision.denyAuthentication()` (or `denyAuthentication(reason)`) -- terminal. Redirect to login.
-- `chain.evaluate(routeClass, context, securityContext)` -- delegate. Pass control to the next evaluator in priority order.
+- `RouteAccessDecision.grant()`, terminal. Allow access and stop the chain.
+- `RouteAccessDecision.deny(reason)`, terminal. Block, redirect to access-denied.
+- `RouteAccessDecision.denyAuthentication()` (or `denyAuthentication(reason)`), terminal. Redirect to login.
+- `chain.evaluate(routeClass, context, securityContext)`, delegate. Pass control to the next evaluator in priority order.
 
 Custom evaluators that should compose with later ones MUST call `chain.evaluate(...)` after their own check passes. Returning `grant()` ends the chain immediately and any later evaluator is skipped.
 
@@ -140,7 +140,7 @@ public class AdminEditUserView extends Composite<Div> { }
 Do NOT combine with terminal annotations:
 
 ```java
-// WRONG -- @PermitAll grants and stops; @RequireOwnership never runs
+// WRONG, @PermitAll grants and stops; @RequireOwnership never runs
 @Route("/users/:userId/profile")
 @PermitAll
 @RequireOwnership("userId")

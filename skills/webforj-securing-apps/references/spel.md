@@ -1,6 +1,6 @@
 # `@RouteAccess` and SpEL Expressions
 
-`@RouteAccess` evaluates a Spring Expression Language (SpEL) string against the authenticated user. Spring-only -- it does not exist in plain webforJ. Use it when authorization is purely a boolean expression of roles and authorities.
+`@RouteAccess` evaluates a Spring Expression Language (SpEL) string against the authenticated user. Spring-only, it does not exist in plain webforJ. Use it when authorization is purely a boolean expression of roles and authorities.
 
 ```java
 import com.webforj.spring.security.annotation.RouteAccess;

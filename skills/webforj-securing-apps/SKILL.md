@@ -14,10 +14,10 @@ webforJ ships a route-level access-control framework (since 25.10). Two integrat
 
 1. **Prefer Spring Security if Spring Boot is on the classpath.** Only implement the custom path when the project is plain webforJ (no Spring Boot) or there is an explicit reason. Custom security is the architecture path; Spring is the default.
 2. **Annotations are shared, packages are split.** `@AnonymousAccess` lives in `com.webforj.router.security.annotation`. `@PermitAll`, `@RolesAllowed`, `@DenyAll` come from `jakarta.annotation.security` (the standard Jakarta package, not webforJ). `@RouteAccess` and `@RegisteredEvaluator` are Spring-only and live in `com.webforj.spring.security.annotation`.
-3. **`@AnonymousAccess` and `@PermitAll` are TERMINAL** -- they grant access immediately and stop the evaluator chain. They cannot be composed with custom evaluators. `@RolesAllowed` is COMPOSABLE -- it delegates to the chain after the role check, so it stacks with custom evaluators like `@RequireOwnership`.
-4. **Secure-by-default is ON by default.** In Spring projects, the `webforj.security.secure-by-default` property defaults to `true` -- you do NOT have to set it to enable it. Set it to `false` only to opt out (early development). The `RouteSecurityConfiguration.isSecureByDefault()` interface default also returns `true`; custom plain implementations override to `false` if they want unannotated routes to be public. With it on, every route requires authentication unless explicitly marked `@AnonymousAccess`.
+3. **`@AnonymousAccess` and `@PermitAll` are TERMINAL**, they grant access immediately and stop the evaluator chain. They cannot be composed with custom evaluators. `@RolesAllowed` is COMPOSABLE, it delegates to the chain after the role check, so it stacks with custom evaluators like `@RequireOwnership`.
+4. **Secure-by-default is ON by default.** In Spring projects, the `webforj.security.secure-by-default` property defaults to `true`, you do NOT have to set it to enable it. Set it to `false` only to opt out (early development). The `RouteSecurityConfiguration.isSecureByDefault()` interface default also returns `true`; custom plain implementations override to `false` if they want unannotated routes to be public. With it on, every route requires authentication unless explicitly marked `@AnonymousAccess`.
 5. **Custom evaluators use priority >= 10.** Priorities 0-9 are reserved for framework evaluators. Spring logs a warning if you register below 10.
-6. **Do not invent.** Every annotation, class, method, and property in this skill comes from the documented webforJ security framework, the canonical Spring sample, or the canonical plain sample. If a name is not listed here or in the references, it does not exist.
+6. **Do not invent.** Every annotation, class, method, and property in this skill is part of webforJ's public security API. If a name is not listed here or in the references, do not use it.
 
 ## Routing decision
 
@@ -25,8 +25,8 @@ webforJ ships a route-level access-control framework (since 25.10). Two integrat
 |---|---|
 | Spring Boot app (most apps) | [Spring Security integration](#spring-security-integration) |
 | Plain webforJ (no Spring Boot) | [Custom plain implementation](#custom-plain-implementation) |
-| Already on Spring, but want a custom evaluator (ownership, subscription, IP, time-window) | Spring + `@RegisteredEvaluator` -- see [`references/custom-evaluators.md`](references/custom-evaluators.md) |
-| Authorize purely with a boolean expression of roles/authorities | Spring + `@RouteAccess("...")` SpEL -- see [`references/spel.md`](references/spel.md) |
+| Already on Spring, but want a custom evaluator (ownership, subscription, IP, time-window) | Spring + `@RegisteredEvaluator`, see [`references/custom-evaluators.md`](references/custom-evaluators.md) |
+| Authorize purely with a boolean expression of roles/authorities | Spring + `@RouteAccess("...")` SpEL, see [`references/spel.md`](references/spel.md) |
 | Read the current user inside a view | [`references/accessing-user.md`](references/accessing-user.md) |
 | Decide which annotation goes on which route | [`references/annotations.md`](references/annotations.md) |
 
@@ -58,13 +58,13 @@ Spring-managed `SpringRouteSecurityManager` registers these:
 |---|---|---|---|
 | 1 | `DenyAllEvaluator` | `@DenyAll` | Always deny, terminal |
 | 2 | `AnonymousAccessEvaluator` | `@AnonymousAccess` | Always grant, terminal |
-| 3 | `AuthenticationRequiredEvaluator` | -- | Ensures auth before role checks |
+| 3 | `AuthenticationRequiredEvaluator` | (no annotation) | Ensures auth before role checks |
 | 4 | `PermitAllEvaluator` | `@PermitAll` | Grant if authenticated, terminal |
 | 5 | `RolesAllowedEvaluator` | `@RolesAllowed` | Check role then delegate (composable) |
 | 6 | `SpringRouteAccessEvaluator` | `@RouteAccess` | Evaluate SpEL then delegate (composable) |
 | 10+ | Custom `@RegisteredEvaluator` | user-defined | User logic |
 
-A custom plain implementation registers only what the app needs (the canonical plain sample uses 0/1/2/3 for `DenyAllEvaluator`, `AnonymousAccessEvaluator`, `PermitAllEvaluator`, `RolesAllowedEvaluator`). Specific numbers do not matter beyond ordering, but stay below 10 for built-ins.
+A custom plain implementation registers only what the app needs. Built-in evaluators are typically registered at `0/1/2/3` for `DenyAllEvaluator`, `AnonymousAccessEvaluator`, `PermitAllEvaluator`, `RolesAllowedEvaluator`. Specific numbers do not matter beyond ordering, but stay below 10 for built-ins.
 
 ## Spring Security integration
 
@@ -144,9 +144,9 @@ public class SecurityConfig {
 
 `WebforjSecurityConfigurer.webforj()`:
 
-- `.loginPage(LoginView.class)` -- pass the view class. webforJ resolves the URL from `@Route` automatically. There is also a `String` overload (`.loginPage("/signin")`) and a two-arg form for separate display and processing URLs (`.loginPage("/signin", "/authenticate")`).
-- `.accessDeniedPage(AccessDenyView.class)` -- same shape; also accepts a string URL.
-- `.logout()` -- enables `/logout`. Overloads: `.logout("/custom-logout")`, `.logout("/custom-logout", "/login?logout")`.
+- `.loginPage(LoginView.class)`, pass the view class. webforJ resolves the URL from `@Route` automatically. There is also a `String` overload (`.loginPage("/signin")`) and a two-arg form for separate display and processing URLs (`.loginPage("/signin", "/authenticate")`).
+- `.accessDeniedPage(AccessDenyView.class)`, same shape; also accepts a string URL.
+- `.logout()`, enables `/logout`. Overloads: `.logout("/custom-logout")`, `.logout("/custom-logout", "/login?logout")`.
 
 ### 3. Write `LoginView`
 
@@ -219,7 +219,7 @@ public class InboxView extends Composite<FlexLayout> { }
 @RolesAllowed("ADMIN")
 public class TeamsView extends Composite<FlexLayout> { }
 
-// Multiple roles -- ANY of them grants access
+// Multiple roles, ANY of them grants access
 @Route(value = "/settings", outlet = MainLayout.class)
 @RolesAllowed({"ADMIN", "MANAGER"})
 public class SettingsView extends Composite<FlexLayout> { }
@@ -234,7 +234,7 @@ See [`references/annotations.md`](references/annotations.md) for full annotation
 
 ### 6. (Optional) Override secure-by-default
 
-The property defaults to `true` -- you only set it explicitly to be self-documenting, or to opt out:
+The property defaults to `true`, you only set it explicitly to be self-documenting, or to opt out:
 
 ```properties
 # application.properties
@@ -349,11 +349,11 @@ Compose with `@RolesAllowed` because that one delegates:
 public class EditProfileView extends Composite<Div> { }
 ```
 
-Do NOT compose with `@PermitAll` or `@AnonymousAccess` -- they are terminal and your evaluator never runs. See [`references/custom-evaluators.md`](references/custom-evaluators.md).
+Do NOT compose with `@PermitAll` or `@AnonymousAccess`, they are terminal and your evaluator never runs. See [`references/custom-evaluators.md`](references/custom-evaluators.md).
 
 ## Custom plain implementation
 
-Use this only for plain webforJ projects without Spring Boot. You implement four interfaces and wire them at startup. The annotations (`@AnonymousAccess`, `@PermitAll`, `@RolesAllowed`, `@DenyAll`) work identically; SpEL (`@RouteAccess`) and `@RegisteredEvaluator` do NOT -- they are Spring-only.
+Use this only for plain webforJ projects without Spring Boot. You implement four interfaces and wire them at startup. The annotations (`@AnonymousAccess`, `@PermitAll`, `@RolesAllowed`, `@DenyAll`) work identically; SpEL (`@RouteAccess`) and `@RegisteredEvaluator` do NOT, they are Spring-only.
 
 ```
 - [ ] 1. SecurityConfiguration implements RouteSecurityConfiguration (enabled, secure-by-default, locations)
@@ -364,7 +364,7 @@ Use this only for plain webforJ projects without Spring Boot. You implement four
 - [ ] 6. Write LoginView and AccessDenyView (use the SecurityManager.login()/logout() helpers)
 ```
 
-The full walkthrough with verbatim source from the canonical plain sample lives in [`references/custom-implementation.md`](references/custom-implementation.md). The shape is:
+The full walkthrough lives in [`references/custom-implementation.md`](references/custom-implementation.md). The shape is:
 
 ```java
 public class SecurityManager extends AbstractRouteSecurityManager {
@@ -412,8 +412,8 @@ Then audit:
   - `pom.xml` declares `spring-boot-starter-security`.
   - A `@Configuration @EnableWebSecurity` class exposes a `SecurityFilterChain` bean built with `WebforjSecurityConfigurer.webforj()`.
   - The login view has `@AnonymousAccess` AND uses `setAction(...)` with a path that matches its `@Route` (or the `loginProcessingUrl`).
-  - `grep -rn "@RegisteredEvaluator" src/main/java` -- every match is on a class implementing `RouteSecurityEvaluator`, with `priority >= 10`.
-  - If `@RouteAccess`, `@RegisteredEvaluator`, or `SpringSecurityFormSubmitter` appear in plain (non-Spring) sources, that is wrong -- they are Spring-only.
+  - `grep -rn "@RegisteredEvaluator" src/main/java`, every match is on a class implementing `RouteSecurityEvaluator`, with `priority >= 10`.
+  - If `@RouteAccess`, `@RegisteredEvaluator`, or `SpringSecurityFormSubmitter` appear in plain (non-Spring) sources, that is wrong, they are Spring-only.
 - For plain projects:
   - `META-INF/services/com.webforj.AppLifecycleListener` lists the registrar's FQCN, one per line.
   - The registrar registers `DenyAllEvaluator`, `AnonymousAccessEvaluator`, `PermitAllEvaluator`, `RolesAllowedEvaluator` and attaches a `RouteSecurityObserver` to `Router.getCurrent().getRenderer()`.
@@ -421,7 +421,7 @@ Then audit:
 - Universal:
   - `@PermitAll`, `@RolesAllowed`, `@DenyAll` imports come from `jakarta.annotation.security` (NOT Spring's `org.springframework.security.access` annotations).
   - `@AnonymousAccess` import is `com.webforj.router.security.annotation.AnonymousAccess`.
-  - No route stacks `@PermitAll` or `@AnonymousAccess` with a custom evaluator -- those are terminal and the custom evaluator would never run; recommend `@RolesAllowed` for composition.
+  - No route stacks `@PermitAll` or `@AnonymousAccess` with a custom evaluator, those are terminal and the custom evaluator would never run; recommend `@RolesAllowed` for composition.
   - Custom evaluator priorities are `>= 10`.
 
 Manual checks (ask the user, do NOT claim them): hit a public page anonymously and confirm it loads; hit a protected page anonymously and confirm the redirect to login; log in as the user without the role and hit a `@RolesAllowed` page, confirm the redirect to access denied; log out and confirm `?logout` appears.
@@ -447,8 +447,8 @@ Manual checks (ask the user, do NOT claim them): hit a public page anonymously a
 
 ## Resources
 
-- [`references/annotations.md`](references/annotations.md) -- per-annotation contract, packages, composition rules
-- [`references/accessing-user.md`](references/accessing-user.md) -- read username/roles in views, conditional rendering
-- [`references/spel.md`](references/spel.md) -- `@RouteAccess` SpEL functions, variables, error codes
-- [`references/custom-evaluators.md`](references/custom-evaluators.md) -- custom annotations + evaluators, priority, composition
-- [`references/custom-implementation.md`](references/custom-implementation.md) -- the four interfaces, full plain-webforJ wiring
+- [`references/annotations.md`](references/annotations.md), per-annotation contract, packages, composition rules
+- [`references/accessing-user.md`](references/accessing-user.md), read username/roles in views, conditional rendering
+- [`references/spel.md`](references/spel.md), `@RouteAccess` SpEL functions, variables, error codes
+- [`references/custom-evaluators.md`](references/custom-evaluators.md), custom annotations + evaluators, priority, composition
+- [`references/custom-implementation.md`](references/custom-implementation.md), the four interfaces, full plain-webforJ wiring
