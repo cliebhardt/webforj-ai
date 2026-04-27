@@ -1,8 +1,8 @@
 # Custom Plain Implementation
 
-Use this when the project is plain webforJ -- no Spring Boot, no `webforj-spring-boot-starter`. You implement four small classes; the framework provides everything else.
+Use this when the project is plain webforJ, no Spring Boot, no `webforj-spring-boot-starter`. You implement four small classes; the framework provides everything else.
 
-The annotations (`@AnonymousAccess`, `@PermitAll`, `@RolesAllowed`, `@DenyAll`) work identically. The Spring-only annotations (`@RouteAccess`, `@RegisteredEvaluator`) are NOT available -- there is no SpEL evaluator and no auto-discovery.
+The annotations (`@AnonymousAccess`, `@PermitAll`, `@RolesAllowed`, `@DenyAll`) work identically. The Spring-only annotations (`@RouteAccess`, `@RegisteredEvaluator`) are NOT available, there is no SpEL evaluator and no auto-discovery.
 
 ## The four interfaces
 
@@ -10,10 +10,10 @@ The annotations (`@AnonymousAccess`, `@PermitAll`, `@RolesAllowed`, `@DenyAll`) 
 |---|---|
 | `RouteSecurityConfiguration` | Where to redirect, whether security is on, secure-by-default |
 | `RouteSecurityContext` | Who is logged in, role/authority checks, custom attributes |
-| `AbstractRouteSecurityManager` | Coordinator -- you extend this, providing the context and configuration |
+| `AbstractRouteSecurityManager` | Coordinator, you extend this, providing the context and configuration |
 | `AppLifecycleListener` | Wires the manager and observer at startup |
 
-## Step 1 -- Configuration
+## Step 1, Configuration
 
 ```java
 package com.example.security;
@@ -49,13 +49,13 @@ public class SecurityConfiguration implements RouteSecurityConfiguration {
 | Method | Purpose |
 |---|---|
 | `isEnabled()` | Master switch. `false` makes the framework grant every route without evaluating. |
-| `isSecureByDefault()` | `true` (interface default) -- unannotated routes require auth. `false` -- unannotated routes are public. The canonical sample overrides to `false` to keep early development simple; production code typically leaves the default `true`. |
+| `isSecureByDefault()` | `true` (interface default), unannotated routes require auth. `false`, unannotated routes are public. Override to `false` only for early development; production code typically leaves the default `true`. |
 | `getAuthenticationLocation()` | Where unauthenticated users are sent (login page). |
 | `getDenyLocation()` | Where authenticated-but-unauthorized users are sent (access-denied page). |
 
-## Step 2 -- Context
+## Step 2, Context
 
-The context answers "who is logged in" using whatever storage your app picked (HTTP session, JWT, database, LDAP). The canonical sample uses session storage:
+The context answers "who is logged in" using whatever storage your app picked (HTTP session, JWT, database, LDAP). A typical session-based implementation:
 
 ```java
 package com.example.security;
@@ -143,7 +143,7 @@ public class SecurityContext implements RouteSecurityContext {
 
 `Environment.getSessionAccessor()` is the supported way to read/write the HTTP session from inside webforJ. For JWT or external stores, replace the `getSessionAttribute(...)` body.
 
-## Step 3 -- Manager
+## Step 3, Manager
 
 Extend `AbstractRouteSecurityManager`. The base class handles the evaluator chain, secure-by-default fallback, redirect on denial, and pre-auth-location storage. You only provide the context and configuration plus app-specific helpers.
 
@@ -227,7 +227,7 @@ public class SecurityManager extends AbstractRouteSecurityManager {
 
 The `login(...)` method here uses an in-memory two-user check for illustration. In a real app, swap in your authentication source (database, LDAP, OAuth callback, etc.).
 
-## Step 4 -- Registrar
+## Step 4, Registrar
 
 A startup hook that creates the manager, registers built-in evaluators, and attaches the navigation observer.
 
@@ -266,7 +266,7 @@ public class SecurityRegistrar implements AppLifecycleListener {
 }
 ```
 
-`@AppListenerPriority(1)` makes this run early -- before any view is rendered. The priority numbers here (`0`, `1`, `2`, `3`) order the evaluators in the chain; their absolute values do not matter as long as they stay below `10` (which is reserved for custom evaluators).
+`@AppListenerPriority(1)` makes this run early, before any view is rendered. The priority numbers here (`0`, `1`, `2`, `3`) order the evaluators in the chain; their absolute values do not matter as long as they stay below `10` (which is reserved for custom evaluators).
 
 To add a custom evaluator, register it after the built-ins:
 
@@ -274,7 +274,7 @@ To add a custom evaluator, register it after the built-ins:
 securityManager.registerEvaluator(new OwnershipEvaluator(), 10);
 ```
 
-## Step 5 -- Register the listener
+## Step 5, Register the listener
 
 webforJ discovers `AppLifecycleListener` via the standard Java SPI mechanism. Create:
 
@@ -292,7 +292,7 @@ If the file is missing or the FQCN is wrong, the registrar never runs and the se
 
 ## LoginView and AccessDenyView (plain)
 
-The login view calls `SecurityManager.getCurrent().login(...)` directly -- there is no Spring auth endpoint to POST to.
+The login view calls `SecurityManager.getCurrent().login(...)` directly, there is no Spring auth endpoint to POST to.
 
 ```java
 @Route("/login")
@@ -323,12 +323,12 @@ IconButton logout = new IconButton(FeatherIcon.LOG_OUT.create());
 logout.onClick(e -> SecurityManager.getCurrent().logout());
 ```
 
-The access-denied view is the same shape as the Spring path -- a regular view at the URL the configuration returns from `getDenyLocation()`.
+The access-denied view is the same shape as the Spring path, a regular view at the URL the configuration returns from `getDenyLocation()`.
 
 ## What you do NOT do in plain mode
 
-- Do NOT add `spring-boot-starter-security` -- there is no Spring `SecurityFilterChain` to wire.
-- Do NOT use `@RouteAccess` -- it requires `SpringRouteAccessEvaluator` which is in `webforj-spring-integration`.
-- Do NOT use `@RegisteredEvaluator` -- it relies on Spring component scanning. Register custom evaluators manually inside `SecurityRegistrar.onWillRun(...)`.
-- Do NOT use `SpringSecurityFormSubmitter` -- there is no `/logout` endpoint to POST to. Call your `SecurityManager.logout()` directly.
-- Do NOT use `SecurityContextHolder` from Spring -- it is empty. Use `SecurityManager.getCurrent().getSecurityContext()` instead.
+- Do NOT add `spring-boot-starter-security`, there is no Spring `SecurityFilterChain` to wire.
+- Do NOT use `@RouteAccess`, it requires `SpringRouteAccessEvaluator` which is in `webforj-spring-integration`.
+- Do NOT use `@RegisteredEvaluator`, it relies on Spring component scanning. Register custom evaluators manually inside `SecurityRegistrar.onWillRun(...)`.
+- Do NOT use `SpringSecurityFormSubmitter`, there is no `/logout` endpoint to POST to. Call your `SecurityManager.logout()` directly.
+- Do NOT use `SecurityContextHolder` from Spring, it is empty. Use `SecurityManager.getCurrent().getSecurityContext()` instead.

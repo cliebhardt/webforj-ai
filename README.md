@@ -495,6 +495,7 @@ Skills fire automatically when your prompt matches their description:
 - *"Wrap this Custom Element library as a webforJ component."*
 - *"Style this view with the DWC design tokens and add a dark theme."*
 - *"Add login and lock down /admin to admins only."*
+- *"Build a customer form bound to my Customer bean and validate on submit."*
 - *"Upgrade this project from webforJ 25 to 26."*
 
 MCP tools work automatically in every client:
@@ -532,6 +533,7 @@ Remote, hosted at `https://mcp.webforj.com/mcp`. Exposes these tools:
 | Skill | What it does |
 | --- | --- |
 | [`webforj-adding-servlets`](skills/webforj-adding-servlets/SKILL.md) | Add custom HTTP endpoints to a webforJ app for REST APIs, webhooks, or third-party servlet integrations. Covers Spring REST controllers, remapping webforJ to a sub-path, and proxying custom servlets through the webforJ config for plain and Spring projects. |
+| [`webforj-building-forms`](skills/webforj-building-forms/SKILL.md) | Build data-entry forms with `BindingContext` auto-binding, Jakarta-Validation annotations, custom `Validator<T>` and `Transformer<C, M>` classes, masked input fields (`MaskedTextField` / `MaskedNumberField` / `MaskedDateField` / `MaskedTimeField`), `Table` mask and currency renderers for formatted columns, the `MaskDecorator` utility for non-input non-`Table` formatting (labels, exports), and `ColumnsLayout` for responsive multi-column form grids. |
 | [`webforj-creating-components`](skills/webforj-creating-components/SKILL.md) | Build reusable webforJ components from core components, third-party Web Component libraries, or plain JavaScript libraries. Covers `ElementComposite` wrappers, component extensions, and page-level utilities. |
 | [`webforj-handling-timers-and-async`](skills/webforj-handling-timers-and-async/SKILL.md) | Schedule timers, periodic intervals, debounced actions, and background async work using webforJ's thread-safe primitives instead of raw timers or threads. Covers polling, search-as-you-type debouncing, long-running tasks with live progress updates, and async services for plain and Spring projects. |
 | [`webforj-localizing-apps`](skills/webforj-localizing-apps/SKILL.md) | Add locale and translation support to a webforJ app. Covers supported locales, browser auto-detect, `messages.properties` bundles, runtime language switching, and custom translation backends for plain and Spring projects. |

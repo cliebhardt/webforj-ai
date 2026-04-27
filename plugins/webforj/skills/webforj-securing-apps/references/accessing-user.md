@@ -21,7 +21,7 @@ boolean isAdmin = authorities.stream()
     .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
 ```
 
-Spring prefixes role-based authorities with `ROLE_` -- the granted authority for `@RolesAllowed("ADMIN")` is `ROLE_ADMIN`. The SpEL helper `hasRole('ADMIN')` applies the same prefix automatically. When you compare strings yourself, include the prefix.
+Spring prefixes role-based authorities with `ROLE_`, the granted authority for `@RolesAllowed("ADMIN")` is `ROLE_ADMIN`. The SpEL helper `hasRole('ADMIN')` applies the same prefix automatically. When you compare strings yourself, include the prefix.
 
 ### Display the username in a view
 
@@ -64,7 +64,7 @@ public class DashboardView extends Composite<Div> {
 }
 ```
 
-UI-level role gating is presentation only -- it hides links from non-admins. Real enforcement still happens at the route level via `@RolesAllowed`. Always pair conditional rendering with the matching annotation on the protected route.
+UI-level role gating is presentation only, it hides links from non-admins. Real enforcement still happens at the route level via `@RolesAllowed`. Always pair conditional rendering with the matching annotation on the protected route.
 
 ### OAuth2 user attributes
 
@@ -102,9 +102,9 @@ The contract:
 | Method | Returns |
 |---|---|
 | `isAuthenticated()` | `true` if a principal exists |
-| `getPrincipal()` | `Optional<Object>` -- whatever the implementation stores (typically the username String) |
+| `getPrincipal()` | `Optional<Object>`, whatever the implementation stores (typically the username String) |
 | `hasRole(String)` | role-based check |
 | `hasAuthority(String)` | authority-based check |
 | `getAttribute(String)` / `setAttribute(String, Object)` | custom security attributes |
 
-How `getPrincipal()` is shaped depends on what the custom `SecurityContext` implementation chose to store -- it could be a username String, a domain user object, JWT claims, etc. See [`custom-implementation.md`](custom-implementation.md).
+How `getPrincipal()` is shaped depends on what the custom `SecurityContext` implementation chose to store, it could be a username String, a domain user object, JWT claims, etc. See [`custom-implementation.md`](custom-implementation.md).

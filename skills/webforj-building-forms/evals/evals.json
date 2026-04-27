@@ -1,0 +1,146 @@
+{
+  "skill_name": "webforj-building-forms",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Build a webforJ registration form with fields name (TextField), age (NumberField), and email (TextField), bound to a User bean. Validate name is non-empty and at least 3 characters, age is between 18 and 120, and email matches the standard email pattern. On submit, write the bean if valid; otherwise the form should highlight the invalid fields. Use Jakarta validation annotations on the bean.",
+      "expected_output": "The agent creates a `User` bean with `@NotEmpty`, `@Length(min=3, max=...)` (or `@Size`), `@Min(18)`, `@Max(120)`, and `@Pattern`/`@Email` constraints from `jakarta.validation.constraints` (with `@Length` from `org.hibernate.validator.constraints` if used). It creates a view holding a `BindingContext<User>` constructed via `BindingContext.of(this, User.class, true)` (or `new BindingContext<>(User.class, true)`) and binds the fields. The submit click handler calls `context.write(bean)` and branches on `result.isValid()`. The default reporter handles error display per-field automatically.",
+      "expectations": [
+        "Defines a `User` bean with Jakarta annotations imported from `jakarta.validation.constraints.*` (NOT `javax.validation`). `@Length` may come from `org.hibernate.validator.constraints` if used.",
+        "LOAD-BEARING: Constructs the `BindingContext` with the Jakarta-validation flag set to `true`, either `BindingContext.of(this, User.class, true)` or `new BindingContext<>(User.class, true)`. Without this flag, the Jakarta annotations on the bean are silently ignored and validation passes for everything.",
+        "LOAD-BEARING: Every `context.bind(...)` chain ends with `.add()`. A chain without `.add()` configures the binding but never registers it, the form silently fails to bind. The check FAILS if any `bind()` call lacks a terminal `.add()`.",
+        "Submit handler calls `context.write(bean)` (NOT `context.read(bean)`, that goes the wrong direction) and inspects `result.isValid()` before persisting / proceeding",
+        "Bean-Validation implementation is on the classpath. The check FAILS if the agent goes out of its way to ADD `org.hibernate.validator:hibernate-validator` + `org.glassfish.expressly:expressly` to a Spring Boot project that already has `spring-boot-starter-validation` (or any Boot starter that pulls it transitively, e.g. `spring-boot-starter-web`), pinning explicit versions on top of Boot fights its managed-dependency versions. The check ALSO FAILS if the project is plain webforJ (no Spring starters) and the agent omits both libraries entirely, then `JakartaValidator` cannot start and the form crashes. Acceptable: agent recognizes Spring transitively brings them, OR adds both explicitly only when no Spring starter is present.",
+        "Does NOT manually call `field.getValue()` for each field on submit and copy values into the bean, the whole point of `BindingContext` is to do that for you",
+        "Does NOT register a custom reporter for every field unless asked. The default reporter shows inline errors on core webforJ fields automatically.",
+        "Does NOT mix `javax.validation.constraints` with `jakarta.validation.constraints`. Jakarta is the modern package."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I have an existing webforJ form view with a TextField named `nameField` and a ComboBox named `power`. The bean property is `name` (matching `power`, but the text field name doesn't match). Use auto-binding instead of manual bind() calls.",
+      "expected_output": "The agent calls `BindingContext.of(this, Bean.class, ...)` and adds `@UseProperty(\"name\")` to the `nameField` declaration so the framework binds it to the `name` property. The `power` field auto-binds because its name matches the bean property.",
+      "expectations": [
+        "Calls `BindingContext.of(this, Bean.class, ...)`, NOT `new BindingContext<>(Bean.class)` followed by manual `context.bind(...)` calls (the prompt explicitly asks for auto-binding)",
+        "LOAD-BEARING: Annotates `nameField` with `@UseProperty(\"name\")` from `com.webforj.data.binding.annotation.UseProperty`. Without this, auto-bind tries to find a bean property called `nameField` and silently produces no binding.",
+        "Does NOT also manually call `context.bind(nameField, \"name\").add()` after calling `BindingContext.of(this, ...)`, that registers the binding twice",
+        "Does NOT add `@UseProperty(\"power\")` to the `power` field, it already matches by name; redundant annotation is wrong style",
+        "Imports the annotation from `com.webforj.data.binding.annotation`, NOT from any other package"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I want my webforJ form to keep the Submit button disabled until the form is fully valid, and write changes to the bean as the user types. Show me the snippet.",
+      "expected_output": "The agent calls `context.observe(bean)` (which does an initial read then writes UI -> bean on every value change) and registers `context.onValidate(e -> submit.setEnabled(e.isValid()))`. The `onClick` handler still calls `context.validate()` (or relies on the bean already being current) before persisting.",
+      "expectations": [
+        "LOAD-BEARING: Calls `context.observe(bean)`, NOT `context.read(bean)` alone. `read` does a one-time bean -> UI sync; without `observe`, value-change listeners are not registered and the bean is not auto-updated as the user types.",
+        "LOAD-BEARING: Uses `context.onValidate(e -> submit.setEnabled(e.isValid()))` (or the equivalent `context.addValidateListener(...)`) to drive submit-enabled state. Without this listener, the submit button stays in whatever initial enabled state was set, regardless of validity.",
+        "Sets the initial submit state to disabled (e.g. `submit.setEnabled(false)`) so the button is correctly off when the form is first rendered with empty/invalid values",
+        "Does NOT poll validity in a timer or check it inside `onClick` only, the documented pattern is event-driven via `onValidate`",
+        "Mentions or implies the unidirectional caveat: `observe` syncs UI -> bean, but later changes to the bean don't reflect back. If the bean changes externally, call `context.read(bean)` again."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Add a phone number field to my webforJ form that formats input as `(XXX) XXX-XXXX` while the user types. Bind it to the `phone` property of my Contact bean.",
+      "expected_output": "The agent uses `MaskedTextField` (NOT a plain `TextField` with custom JS) with `setMask(\"(000) 000-0000\")`. The field is bound via `context.bind(phoneField, \"phone\").add()`. The bean property is `String phone`.",
+      "expectations": [
+        "LOAD-BEARING: Uses `MaskedTextField` from `com.webforj.component.field.MaskedTextField`, NOT a plain `TextField` with manual formatting, NOT a regex-only `setPattern(...)` (which only validates, doesn't format-as-you-type)",
+        "LOAD-BEARING: The mask is `\"(000) 000-0000\"`, the `0` token means 'any digit'. The check FAILS if the agent uses a non-existent mask token like `9` (jQuery-mask-style), `\\d`, or attempts to use a regex",
+        "Imports from `com.webforj.component.field.MaskedTextField`",
+        "Binds with `context.bind(phoneField, \"phone\").add()` (or auto-bind with field name matching), the `String` value of the field maps directly to the bean's `String phone` property",
+        "Does NOT add a `setPattern(...)` call on the field that re-validates the same shape the mask enforces, the mask already guarantees the structure",
+        "LOAD-BEARING: Does NOT add a `@Pattern` (or any other regex-shape constraint) on the bean's `phone` property that re-validates the `(NNN) NNN-NNNN` shape. The mask already prevents any other shape from reaching the bean. Adding this is dead code that wastes attention and confuses the contract. Acceptable Jakarta annotations on `phone` are constraints the mask CANNOT express, like `@NotEmpty` (mask still lets the user submit empty) or `@Size(min=14, max=14)` (mask allows partially-filled input). Anything that re-asserts the digit-and-paren-and-dash structure FAILS this check."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "I have a webforJ Table with a `price` column showing values like `1234567.89` raw. Format it as a US currency string `$1,234,567.89` in the column.",
+      "expected_output": "The agent attaches a `CurrencyRenderer<>(Locale.US)` (or equivalent: a `MaskedNumberRenderer<>(\"$#,###,##0.00\", Locale.US)`) to the column with `column.setRenderer(...)`. It does NOT use `MaskDecorator` inside a value provider or cell renderer because Table has dedicated mask renderers for this case. The renderer runs in the browser per cell, the server only ships the raw `Double`.",
+      "expectations": [
+        "LOAD-BEARING: Uses a Table renderer wired with `column.setRenderer(...)`. Acceptable: `new CurrencyRenderer<>(Locale.US)` from `com.webforj.component.table.renderer.CurrencyRenderer`, OR `new MaskedNumberRenderer<>(\"$#,###,##0.00\", Locale.US)` from `com.webforj.component.table.renderer.MaskedNumberRenderer`. The check FAILS if the agent uses `MaskDecorator.forNumber(...)` for this Table column, that is the wrong tool for Table cells.",
+        "Imports the renderer from `com.webforj.component.table.renderer.*`, NOT from `com.webforj.component.field` (that package is for INPUT components, not renderers)",
+        "Wires the renderer with `column.setRenderer(renderer)` after `table.addColumn(\"price\", Product::getPrice)` (or chained with the column reference). The check FAILS if the agent calls `setRenderer(...)` on the table itself rather than on a column.",
+        "If `MaskedNumberRenderer` is chosen, the mask uses webforJ tokens: `0` (always digit), `#` (suppress leading zeros), `,` (grouping), `.` (decimal), `$` (literal). Wrong masks: Java `DecimalFormat` patterns, `String.format` patterns, `\"\\u00A4#,##0.00\"` (currency symbol token does not exist on these renderers).",
+        "Does NOT call `MaskDecorator` anywhere, the prompt is about a Table column and the documented tool is a Table renderer. Suggesting `MaskDecorator` here is the wrong recommendation that the user explicitly flagged.",
+        "Does NOT instantiate `MaskedNumberField` (a UI input component) to format a Table cell, fields are for user typing, not for rendering"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "I generate a daily PDF summary email outside any UI. I have a `LocalDate reportDate` and a `double totalRevenue`. Format them as `Report for July 04, 2025: $1,234,567.89` for the email body. The values are NOT in a Table, NOT in a form field.",
+      "expected_output": "The agent uses `MaskDecorator.forDate(reportDate, \"%Ml %Dz, %Yl\")` and `MaskDecorator.forNumber(totalRevenue, \"$#,###,##0.00\")` to compose the line. Both calls null-check the result before concatenating, since `MaskDecorator` returns `null` on invalid input. This is the documented use case for `MaskDecorator`: a non-input, non-Table surface where the mask syntax is wanted.",
+      "expectations": [
+        "LOAD-BEARING: Uses `MaskDecorator` from `com.webforj.MaskDecorator` (top-level package, NOT under `component.field`, NOT under `component.table.renderer`). The check FAILS if the agent invents a different package.",
+        "Calls `MaskDecorator.forDate(reportDate, mask)` for the date and `MaskDecorator.forNumber(totalRevenue, mask)` for the number. The date mask uses `%` tokens (e.g. `\"%Ml %Dz, %Yl\"`, `\"%Mz/%Dz/%Yl\"`); the number mask uses `0`, `#`, `,`, `.`, `$` (e.g. `\"$#,###,##0.00\"`). Java `DateTimeFormatter` patterns or `DecimalFormat` patterns are wrong on these calls.",
+        "Null-checks the result of each `MaskDecorator` call before concatenating. `MaskDecorator` returns `null` on invalid input, and an unchecked `null` interpolated into a string produces literal `null` in the output.",
+        "Does NOT use a `Table` renderer (`CurrencyRenderer`, `MaskedNumberRenderer`, `MaskedDateTimeRenderer`), there is no Table involved",
+        "Does NOT use `MaskedTextField` / `MaskedNumberField` / `MaskedDateField`, those are UI input components, not stateless formatters",
+        "Does NOT roll a custom `DateTimeFormatter` / `NumberFormat` for this, the prompt is about webforJ formatting and `MaskDecorator` is the documented tool for non-input, non-Table surfaces"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Build a date-range picker in my webforJ form: a start date and an end date. Validation: start must be before end, end must be after start. When the user changes one, re-validate the other so cross-field errors update immediately.",
+      "expected_output": "The agent uses two `MaskedDateField` (or plain `DateField`) bound to `startDate` and `endDate`, each with `useValidator(...)` calls that compare against the peer date stored in the view. After each value change, the agent calls `context.getBinding(\"<peer>\").validate()` to revalidate the other field.",
+      "expectations": [
+        "Uses `MaskedDateField` (or `DateField`) from `com.webforj.component.field` for both start and end. Bound to bean properties of type `LocalDate` (or `LocalDateTime` if datetime).",
+        "LOAD-BEARING: Each binding has a `.useValidator(value -> peer != null && value.isBefore/isAfter(peer), \"...\")` predicate that checks against a captured peer value held in the view (a `LocalDate`/`LocalDateTime` field on the class)",
+        "LOAD-BEARING: After `start` changes, the value-change listener calls `context.getBinding(\"endDate\").validate()` (and symmetrically for `end`). Without this manual revalidation, only the field the user just edited gets re-checked, and the peer's existing error stays stale.",
+        "Captures the latest peer value BEFORE calling `getBinding(\"...\").validate()`, the predicate reads the captured peer field, so it must be assigned first in the listener",
+        "Does NOT try to register a single 'cross-field' validator outside of any binding, the documented pattern is per-binding validators that read external state",
+        "Does NOT skip the `.add()` at the end of each binding chain"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "I have a webforJ form with First Name, Last Name, Email, Password, Confirm Password, Address, State, Zip, Submit, Cancel. Lay them out so on desktop they form a 2-column grid with Email and Address spanning both columns, but on mobile they all stack to a single column.",
+      "expected_output": "The agent uses `ColumnsLayout` with breakpoints: 1 column at narrow width and 2 columns at a desktop-class width (e.g. `40em` or `600px`). Calls `setSpan(email, 2)` and `setSpan(address, 2)`. Field declaration order in the constructor matches the visual flow.",
+      "expectations": [
+        "LOAD-BEARING: Uses `ColumnsLayout` from `com.webforj.component.layout.columnslayout.ColumnsLayout`. `Breakpoint` and `Alignment` are referenced as `ColumnsLayout.Breakpoint` and `ColumnsLayout.Alignment` (static inner classes). The check FAILS if the agent treats them as top-level classes or imports them from a different package.",
+        "Sets at least two breakpoints: one at width `0` with `1` column (mobile fallback) and one at a desktop-class width (e.g. `600`, `\"40em\"`, `\"48em\"`) with `2` columns",
+        "LOAD-BEARING: Calls `layout.setSpan(email, 2)` and `layout.setSpan(address, 2)` so those fields take both columns on desktop. Without these calls, email and address would be paired with the next field rather than running full-width.",
+        "Field order in the layout constructor matches the requested visual flow: firstName | lastName, email (full), password | passwordConfirm, address (full), state | zip, cancel | submit (or similar)",
+        "Does NOT use `FlexLayout` alone, `FlexLayout` does not provide responsive breakpoints with auto-collapsing columns",
+        "Does NOT hand-roll CSS media queries for responsive behavior when `ColumnsLayout.Breakpoint` is the documented mechanism"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "I want my webforJ MaskedDateField to ONLY allow date selection through the calendar picker, no manual typing. Set it up.",
+      "expected_output": "The agent calls `dateField.setAllowCustomValue(false)` to disable manual text entry and `dateField.getPicker().setAutoOpen(true)` so the calendar opens automatically when the field gains focus. This is the documented recipe for picker-only entry.",
+      "expectations": [
+        "LOAD-BEARING: Calls `dateField.setAllowCustomValue(false)`, this is the call that disables manual typing. Without it, users can still type values that bypass the picker.",
+        "LOAD-BEARING: Calls `dateField.getPicker().setAutoOpen(true)` (or similar, the picker must be set to auto-open so the user has a way to actually pick a date). The combination of `allowCustomValue=false` AND `autoOpen=true` is the documented picker-only recipe.",
+        "Acceptable additional touches: `dateField.getPicker().setIconVisible(true)` so the calendar icon is visible; `dateField.setMask(\"%Mz/%Dz/%Yz\")` (or another date mask) so the format is consistent",
+        "Does NOT recommend disabling the field entirely with `setEnabled(false)`, that blocks ALL interaction including the picker",
+        "Does NOT attempt to attach a key listener that swallows keystrokes, that's a fragile workaround when `setAllowCustomValue(false)` is the supported API"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "My webforJ form has TextField nameField bound to a User bean's `name` property. The user wants password strength validation: at least 8 chars, at least one digit, at least one uppercase letter. Implement a reusable PasswordStrengthValidator.",
+      "expected_output": "The agent implements a class implementing `Validator<String>` from `com.webforj.data.validation.server.validator.Validator`, with a `validate(String value)` method returning `ValidationResult.valid()` or `ValidationResult.invalid(...)`. The validator is applied via `.useValidator(new PasswordStrengthValidator())` on the password binding (or via `@UseValidator(PasswordStrengthValidator.class)`).",
+      "expectations": [
+        "LOAD-BEARING: Defines a class implementing `Validator<String>` from `com.webforj.data.validation.server.validator.Validator`. The check FAILS if the agent uses a Spring `Validator`, a Jakarta `ConstraintValidator`, or rolls a `Predicate<String>` without going through the `Validator` interface (the prompt asks for a reusable validator class).",
+        "LOAD-BEARING: The `validate(...)` method returns `ValidationResult.valid()` or `ValidationResult.invalid(\"message\")` from `com.webforj.data.validation.server.ValidationResult`. The check FAILS if the agent returns `null`, `boolean`, or a custom result type.",
+        "The validator checks all three constraints: length >= 8, at least one digit, at least one uppercase letter. Returning `invalid(\"...\")` on the first failure is fine; aggregating all failure messages is also fine.",
+        "Applies the validator with `.useValidator(new PasswordStrengthValidator())` (or `@UseValidator(PasswordStrengthValidator.class)` on the field), NOT `.useValidator(value -> ..., \"message\")` (that's an inline predicate, not a reusable validator class)",
+        "Does NOT use Jakarta `@Pattern` for this, the prompt asks for a reusable validator class. Jakarta `@Pattern` would be a different (also valid) approach, but not the requested one."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "My Order bean has property `orderDate` of type `String` in `yyyy-MM-dd` format, but I want to bind it to a `MaskedDateField` (which works in `LocalDate`). Set up the binding correctly.",
+      "expected_output": "The agent writes a `Transformer<LocalDate, String>` that uses a `DateTimeFormatter.ofPattern(\"yyyy-MM-dd\")` to convert between component `LocalDate` and bean `String`. The binding declares the bean type as the third arg to `bind`: `context.bind(dateField, \"orderDate\", String.class).useTransformer(new DateTransformer()).add();` so the framework knows the bean uses `String` while the component uses `LocalDate`.",
+      "expectations": [
+        "LOAD-BEARING: Implements `Transformer<LocalDate, String>` from `com.webforj.data.transformation.transformer.Transformer`. The generic order is component-type FIRST, then model-type. The check FAILS if the agent reverses the generics (`Transformer<String, LocalDate>`).",
+        "Implements both `transformToComponent(String modelValue)` returning `LocalDate` and `transformToModel(LocalDate componentValue)` returning `String`",
+        "Uses `java.time.format.DateTimeFormatter.ofPattern(\"yyyy-MM-dd\")` to format/parse. NOT webforJ mask syntax (`%Yl-%Mz-%Dz`), that's for the field's display mask, not for converting model strings.",
+        "LOAD-BEARING: When binding, passes the bean type as a THIRD argument to `bind`: `context.bind(dateField, \"orderDate\", String.class)`. Without this, the framework assumes the bean type matches the component type and the transformer is misapplied.",
+        "Calls `.useTransformer(new DateTransformer())` (or `@UseTransformer(DateTransformer.class)` on the field) on the binding builder",
+        "Throws `TransformationException` (from `com.webforj.data.transformation`) on parse failure, not a generic `RuntimeException` and not silently returning `null`"
+      ]
+    }
+  ]
+}

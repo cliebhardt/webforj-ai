@@ -10,7 +10,7 @@ Five annotations control route access. Four work in any setup; one is Spring-onl
 | `@DenyAll` | `jakarta.annotation.security` | Both | Always deny, terminal |
 | `@RouteAccess` | `com.webforj.spring.security.annotation` | Spring only | SpEL expression, composable |
 
-## `@AnonymousAccess` -- public routes
+## `@AnonymousAccess`, public routes
 
 Marks a route as publicly accessible. Anyone, authenticated or not, can reach it. Use for login pages, public landing pages, terms of service, registration, etc.
 
@@ -20,9 +20,9 @@ Marks a route as publicly accessible. Anyone, authenticated or not, can reach it
 public class LoginView extends Composite<Login> { }
 ```
 
-The login page itself MUST carry `@AnonymousAccess` -- otherwise secure-by-default redirects unauthenticated users away from the login page, creating an infinite loop.
+The login page itself MUST carry `@AnonymousAccess`, otherwise secure-by-default redirects unauthenticated users away from the login page, creating an infinite loop.
 
-## `@PermitAll` -- any authenticated user
+## `@PermitAll`, any authenticated user
 
 Requires the user to be logged in but does not require any specific role.
 
@@ -34,7 +34,7 @@ public class InboxView extends Composite<FlexLayout> { }
 
 When `secure-by-default` is enabled, leaving a route unannotated is equivalent to `@PermitAll`. Use the explicit annotation to make the intent visible, or omit it and rely on the global setting.
 
-## `@RolesAllowed` -- role-based access
+## `@RolesAllowed`, role-based access
 
 Restricts access to users with at least one of the listed roles. Authenticated users without a matching role are redirected to the access-denied page.
 
@@ -54,11 +54,11 @@ Multiple roles (ANY of them grants access):
 public class SettingsView extends Composite<FlexLayout> { }
 ```
 
-Role names use uppercase by convention (`ADMIN`, `USER`, `MANAGER`). With Spring Security, `@RolesAllowed("ADMIN")` matches the granted authority `ROLE_ADMIN` -- Spring strips/adds the `ROLE_` prefix automatically.
+Role names use uppercase by convention (`ADMIN`, `USER`, `MANAGER`). With Spring Security, `@RolesAllowed("ADMIN")` matches the granted authority `ROLE_ADMIN`, Spring strips/adds the `ROLE_` prefix automatically.
 
 `@RolesAllowed` is composable: after granting, it delegates to the chain. Stack it with custom evaluators (`@RequireOwnership`, `@RequiresSubscription`, etc.) when you need additional checks.
 
-## `@DenyAll` -- block all access
+## `@DenyAll`, block all access
 
 ```java
 @Route(value = "/maintenance", outlet = MainLayout.class)
@@ -68,7 +68,7 @@ public class MaintenanceView extends Composite<FlexLayout> { }
 
 Useful for temporary lockdowns and views still under development. For production, prefer removing the route or using proper role restrictions.
 
-## `@RouteAccess` -- SpEL rule (Spring only)
+## `@RouteAccess`, SpEL rule (Spring only)
 
 ```java
 @Route(value = "/admin", outlet = MainLayout.class)
@@ -91,13 +91,13 @@ See [`spel.md`](spel.md) for functions, variables, error codes, and composition 
 A terminal annotation makes the chain stop the moment it grants or denies, so any custom evaluator stacked on the same route NEVER runs. If you need composition, use `@RolesAllowed` (or `@RouteAccess`) as the gate annotation:
 
 ```java
-// WRONG -- @PermitAll grants and stops; @RequireOwnership never runs
+// WRONG, @PermitAll grants and stops; @RequireOwnership never runs
 @Route("/users/:userId/profile")
 @PermitAll
 @RequireOwnership("userId")
 public class ProfileView extends Composite<Div> { }
 
-// CORRECT -- @RolesAllowed delegates; @RequireOwnership runs after
+// CORRECT, @RolesAllowed delegates; @RequireOwnership runs after
 @Route("/users/:userId/profile")
 @RolesAllowed("USER")
 @RequireOwnership("userId")
@@ -122,9 +122,9 @@ Spring projects override it in `application.properties`:
 webforj.security.secure-by-default=false
 ```
 
-Custom plain implementations override `RouteSecurityConfiguration.isSecureByDefault()` -- the interface default returns `true`, so omit the override unless you want unannotated routes to be public.
+Custom plain implementations override `RouteSecurityConfiguration.isSecureByDefault()`, the interface default returns `true`, so omit the override unless you want unannotated routes to be public.
 
-With `secure-by-default=true`, only `@AnonymousAccess` keeps a route public. Forgetting to annotate a sensitive route still leaves it protected -- this is the safer default and the reason it ships on.
+With `secure-by-default=true`, only `@AnonymousAccess` keeps a route public. Forgetting to annotate a sensitive route still leaves it protected, this is the safer default and the reason it ships on.
 
 ## Imports cheat sheet
 
@@ -142,4 +142,4 @@ import com.webforj.spring.security.annotation.RouteAccess;
 import com.webforj.spring.security.annotation.RegisteredEvaluator;
 ```
 
-Do NOT import `@PermitAll` etc. from Spring's `org.springframework.security.access` package -- the framework looks for the Jakarta versions.
+Do NOT import `@PermitAll` etc. from Spring's `org.springframework.security.access` package, the framework looks for the Jakarta versions.
