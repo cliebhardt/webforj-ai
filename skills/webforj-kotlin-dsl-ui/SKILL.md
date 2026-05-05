@@ -1,6 +1,6 @@
 ---
 name: webforj-kotlin-dsl-ui
-description: "Create webforJ user interfaces using the Kotlin DSL for concise, type-safe UI construction. Covers component creation, layout composition, event handling, and integration with webforJ's core features. Use when asked to build UIs with Kotlin DSL syntax."
+description: "Create webforJ user interfaces using the Kotlin DSL for concise, type-safe UI construction. Covers component creation, layout composition, event handling, and integration with webforJ's core features. Use when asked to build UIs with Kotlin DSL syntax, create Kotlin DSL components, or write webforJ Kotlin code."
 ---
 
 # Building UIs with Kotlin DSL in webforJ
@@ -38,7 +38,14 @@ fun @WebforjDsl HasComponents.button(
     theme: ButtonTheme? = null,
     block: @WebforjDsl Button.() -> Unit = {}
 ): Button {
-    // Implementation
+    val button = if (theme != null && text != null) {
+        Button(text, theme)
+    } else if (text != null) {
+        Button(text)
+    } else {
+        Button().apply { theme?.let { setTheme(it) } }
+    }
+    return init(button, block)
 }
 ```
 
@@ -64,6 +71,42 @@ fun <T: Component> @WebforjDsl T.build(block: @WebforjDsl T.() -> Unit) {
 }
 ```
 
+**Usage in Composite views (recommended pattern):**
+
+```kotlin
+class MyView : Composite<FlexLayout>() {
+    private val self = boundComponent
+    
+    init {
+        self.build {
+            direction = FlexDirection.COLUMN
+            // DSL components here
+        }
+    }
+}
+```
+
+Note: While the `build { }` pattern is preferred, you may also see `self.apply { }` in older examples. Both work, but `build` is the recommended approach as it provides better DSL scope safety.
+
+## Required Imports
+
+When using the Kotlin DSL, ensure you have the proper imports:
+
+```kotlin
+// Core DSL imports
+import com.webforj.kotlin.dsl.*
+import com.webforj.kotlin.dsl.component.button.button
+import com.webforj.kotlin.dsl.component.field.textField
+import com.webforj.kotlin.dsl.component.layout.flexlayout.flexLayout
+import com.webforj.concern.HasComponents
+
+// Extension imports (for styles, classNames, etc.)
+import com.webforj.kotlin.extension.styles
+import com.webforj.kotlin.extension.classNames
+import com.webforj.kotlin.extension.px
+import com.webforj.kotlin.extension.percent
+```
+
 ## Component Creation Patterns
 
 ### Basic Components
@@ -78,14 +121,19 @@ button("Primary", ButtonTheme.PRIMARY)
 // Button with initialization block
 button("Submit") {
     onClick { /* handle click */ }
-    setEnabled(true)
+    isEnabled = true
 }
 
-// Text field
+// Text field with label and value
 textField("Name", "John Doe")
 
 // Text field with configuration
-textField("Email") {
+textField("Email", placeholder = "Enter email") {
+    isRequired = true
+}
+
+// Text field with type
+textField("Email", type = TextField.Type.EMAIL) {
     placeholder = "Enter email"
     isRequired = true
 }
@@ -94,7 +142,7 @@ textField("Email") {
 checkBox("Subscribe to newsletter")
 
 // Radio button group
-radioButtonGroup("Gender") {
+radioButtonGroup {
     radioButton("Male")
     radioButton("Female")
     radioButton("Other")
@@ -104,31 +152,33 @@ radioButtonGroup("Gender") {
 ### Container Components
 
 ```kotlin
-// Flex layout
+// Flex layout with direction
 flexLayout(FlexDirection.COLUMN) {
     // Vertical layout
     button("Top")
     button("Bottom")
 }
 
-// Horizontal flex layout
+// Horizontal flex layout using helper
 flexLayout {
     horizontal() // Sets direction to ROW
     button("Left")
     button("Right")
 }
 
-// App layout
+// App layout with slots (headerSlot, drawerSlot, footerSlot)
 appLayout {
-    appBar {
+    headerSlot {
         label("My App")
+        button("Settings")
     }
-    drawer {
-        button("Menu Item 1")
-        button("Menu Item 2")
+    drawerSlot {
+        button("Dashboard")
+        button("Reports")
+        button("Settings")
     }
-    content {
-        label("Main content")
+    footerSlot {
+        label("© 2026 My Company")
     }
 }
 
@@ -180,33 +230,25 @@ flexLayout {
 
 ### AppLayout Patterns
 
+The AppLayout uses slot-based DSL functions: `headerSlot`, `footerSlot`, `drawerSlot`, `drawerTitleSlot`, `drawerHeaderActionsSlot`, and `drawerFooterSlot`.
+
 ```kotlin
 appLayout {
-    // App bar configuration
-    appBar {
+    // Header slot configuration
+    headerSlot {
         label("Application Title")
-        button("Settings") {
-            iconSlot { icon("settings") }
-        }
+        button("Menu")
     }
     
-    // Navigation drawer
-    drawer {
+    // Drawer slot configuration
+    drawerSlot {
         button("Dashboard")
         button("Reports")
         button("Settings")
     }
     
-    // Main content area
-    content {
-        flexLayout {
-            label("Welcome to the application")
-            button("Get Started")
-        }
-    }
-    
-    // Footer (optional)
-    footer {
+    // Footer slot configuration
+    footerSlot {
         label("© 2026 My Company")
     }
 }
@@ -238,12 +280,13 @@ textField("Search") {
     }
 }
 ```
-```
 
 ### Form Events
 
 ```kotlin
-form {
+flexLayout {
+    direction = FlexDirection.COLUMN
+    
     textField("Username") {
         onBlur {
             // Validate when field loses focus
@@ -261,9 +304,7 @@ form {
     button("Submit") {
         onClick {
             // Handle form submission
-            if (validateForm()) {
-                submitForm()
-            }
+            submitForm()
         }
     }
 }
@@ -271,7 +312,7 @@ form {
 
 ## Advanced Patterns
 
-### Slot Usage
+### Slot Usage (for components with prefixes/suffixes/icons)
 
 ```kotlin
 button("With Icon") {
@@ -319,22 +360,56 @@ customButton("Action", "star") {
 ```kotlin
 // Creating a custom form field component
 fun @WebforjDsl HasComponents.labeledTextField(
-    label: String,
+    labelText: String,
     placeholder: String? = null,
     block: @WebforjDsl TextField.() -> Unit = {}
 ): TextField {
-    return flexLayout(FlexDirection.COLUMN) {
-        label(label)
-        textField(placeholder) {
+    var textField: TextField? = null
+    flexLayout(FlexDirection.COLUMN) {
+        spacing = "4px"
+        label(labelText)
+        textField = textField("", placeholder = placeholder) {
             block()
         }
-    }.components.last()
+    }
+    return textField!!
 }
 
 // Usage
 labeledTextField("Email", "Enter your email") {
     isRequired = true
     type = TextField.Type.EMAIL
+}
+```
+
+## Styling Components
+
+### Using styles Extension
+
+```kotlin
+button("Styled") {
+    styles["background-color"] = "#007bff"
+    styles["color"] = "white"
+    styles["padding"] = "12px 24px"
+    styles["border-radius"] = "4px"
+}
+```
+
+### Using CSS Classes
+
+```kotlin
+button("Primary Action") {
+    classNames += "btn-primary"
+}
+```
+
+### Using Theme Values
+
+```kotlin
+button("Primary Action") {
+    theme = ButtonTheme.PRIMARY
+    margin = "var(--dwc-space-m)"
+    padding = "var(--dwc-space-s) var(--dwc-space-m)"
 }
 ```
 
@@ -365,24 +440,8 @@ class UserView : Composite<FlexLayout>() {
                     }
                 }
             }
-            
-            // User table or list would go here
-            flexLayout {
-                // User data display
-            }
         }
     }
-}
-```
-
-### Dependency Injection
-
-```kotlin
-@Component
-class UserView @Inject constructor(
-    private val userService: UserService
-) : Composite<FlexLayout>() {
-    // View implementation using injected service
 }
 ```
 
@@ -417,24 +476,35 @@ class CounterView : Composite<FlexLayout>() {
 
 ## Best Practices
 
-### 1. Consistent Styling
-Use CSS variables and theme values for consistent styling:
+### 1. Use build Pattern
+
+Prefer `self.build { }` over `self.apply { }` for configuring the bound component:
 
 ```kotlin
-button("Primary Action") {
-    theme = ButtonTheme.PRIMARY
-    margin = "var(--dwc-space-m)"
-    padding = "var(--dwc-space-s) var(--dwc-space-m)"
+// Recommended:
+init {
+    self.build {
+        direction = FlexDirection.COLUMN
+        button("Click me")
+    }
+}
+
+// Acceptable (older pattern):
+init {
+    self.apply {
+        direction = FlexDirection.COLUMN
+        button("Click me")
+    }
 }
 ```
 
 ### 2. Accessibility
+
 Always provide meaningful labels and accessible components:
 
 ```kotlin
 button("Submit Form") {
     ariaLabel = "Submit the form"
-    // Or use text that describes the action
 }
 
 // For icons, always provide accessibility labels
@@ -445,11 +515,11 @@ button {
 ```
 
 ### 3. Performance Considerations
+
 Avoid deeply nested layouts when possible:
 
 ```kotlin
 // Prefer this:
-// Instead of deeply nested flex layouts
 flexLayout {
     // Flat structure is better for performance
     button("Item 1")
@@ -463,40 +533,26 @@ flexLayout {
 ```
 
 ### 4. Code Organization
+
 Organize DSL code for readability:
 
 ```kotlin
 appLayout {
-    // App bar
-    appBar {
+    // Header
+    headerSlot {
         label("My App")
-        button("Settings") {
-            // Settings button configuration
-        }
     }
     
     // Drawer
-    drawer {
-        // Navigation items
+    drawerSlot {
         button("Home")
         button("Profile")
         button("Settings")
     }
     
-    // Main content
-    content {
-        // Tabbed interface
-        tabbedPane {
-            tab("Dashboard") {
-                // Dashboard content
-            }
-            tab("Reports") {
-                // Reports content
-            }
-            tab("Settings") {
-                // Settings content
-            }
-        }
+    // Footer
+    footerSlot {
+        label("© 2026 My Company")
     }
 }
 ```
@@ -504,27 +560,20 @@ appLayout {
 ## Common Pitfalls to Avoid
 
 ### 1. Incorrect Scope Usage
+
 ```kotlin
 // Wrong: Calling button() outside of HasComponents scope
 flexLayout {
-    button("Button 1")
-    // This works because flexLayout returns HasComponents
-    
-    // But this would be wrong if we tried to call button() on a non-HasComponents object
-    // someNonComponent.button() // Compilation error due to @WebforjDsl
-}
-
-// Correct:
-flexLayout {
     button("Button 1") {
         // Inside button scope, we can only call Button methods
-        setEnabled(true)
+        isEnabled = true
         // textField() would be wrong here - not in HasComponents scope
     }
 }
 ```
 
 ### 2. Forgetting to Return Components
+
 ```kotlin
 // Wrong: Not returning the created component
 fun createButton(): Button {
@@ -543,13 +592,12 @@ fun createButton(): Button {
 ```
 
 ### 3. Overusing Nesting
+
 ```kotlin
 // Avoid deeply nested structures when flat would suffice
 flexLayout {
     flexLayout { // Unnecessary nesting
-        flexLayout { // Even more unnecessary
-            button("Deeply nested")
-        }
+        button("Deeply nested")
     }
 }
 
@@ -568,7 +616,7 @@ flexLayout {
 - `toggleButton()` - Stateful button
 
 ### Fields
-- `textField()` - Text input
+- `textField()` - Text input (supports `label`, `value`, `placeholder`, `type` parameters)
 - `passwordField()` - Password input
 - `textArea()` - Multi-line text
 - `numberField()` - Numeric input
@@ -580,15 +628,14 @@ flexLayout {
 
 ### Layouts
 - `flexLayout()` - Flexbox container
-- `appLayout()` - Application layout with header/drawer/footer
+- `appLayout()` - Application layout with header/drawer/footer slots
 - `columnsLayout()` - Responsive grid layout
 - `splitter()` - Resizable panels
 
 ### Containers
 - `dialog()` - Modal dialog
-- `drawer()` - Side panel
-- `tabbedPane()` - Tabbed interface
-- `accordion()` - Collapsible panels
+- `accordion()` / `accordionPanel()` - Collapsible panels
+- `tabbedPane()` / `tab()` - Tabbed interface
 
 ### Display
 - `label()` - Text display
@@ -606,6 +653,11 @@ flexLayout {
 - `anchor()` - Hyperlink
 - `appNav()` - Application navigation
 
+### HTML Elements
+- `div()`, `span()` - Generic containers
+- `h1()` through `h6()` - Headers
+- `p()` - Paragraph
+
 ## Verification
 
 To verify your Kotlin DSL code:
@@ -619,9 +671,9 @@ To verify your Kotlin DSL code:
 ## Troubleshooting
 
 ### Compilation Errors
-- **"Unresolved reference"**: Make sure you have the proper imports
+- **"Unresolved reference"**: Make sure you have the proper imports from `com.webforj.kotlin.dsl.*`
 - **"Type mismatch"**: Check that you're using the correct parameter types
-- **"Invalid scope"**: Ensure you're calling DSL functions in the correct context
+- **"Invalid scope"**: Ensure you're calling DSL functions in the correct context (inside `HasComponents`)
 
 ### Runtime Issues
 - **Component not showing**: Check that you're adding components to a container

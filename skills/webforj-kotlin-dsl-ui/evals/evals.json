@@ -3,130 +3,33 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Create a submit button with text 'Save' and PRIMARY theme using the Kotlin DSL. The button should show a toast message 'Saved!' when clicked.",
-      "expected_output": "The agent uses the DSL function `button()` to create the component, sets the text and ButtonTheme.PRIMARY, and adds an `onClick` handler that calls `toast()`. The code should not use Java constructors like `new Button()`.",
-      "expectations": [
-        "Uses DSL function `button(\"Save\", ButtonTheme.PRIMARY)` or equivalent",
-        "Does NOT use `new Button()` constructor (must use DSL)",
-        "Sets `onClick` handler with lambda that calls `toast(\"Saved!\")`",
-        "Imports DSL functions from `com.webforj.kotlin.dsl.component.button.button`",
-        "Returns the Button component or adds it to a parent container"
-      ]
+      "prompt": "I need to create a login form for my webforJ app using Kotlin DSL with the `build` pattern. It should have username and password fields, a remember me checkbox, and a submit button. The form should be vertically laid out and the submit button should show a toast message when clicked. Use proper imports from com.webforj.kotlin.dsl.*",
+      "expected_output": "Kotlin DSL code that uses self.build { } pattern, creates a login form with textField for username, passwordField for password, checkBox for remember me, and a button with onClick handler that shows a toast. Should use flexLayout with COLUMN direction for vertical layout. Should include proper imports.",
+      "files": []
     },
     {
       "id": 2,
-      "prompt": "Create a FlexLayout container with row direction containing three buttons: 'One', 'Two', 'Three'. Use horizontal() shortcut and set spacing to '10px'.",
-      "expected_output": "The agent creates a FlexLayout using `flexLayout()` DSL function, sets direction to ROW using the `horizontal()` shortcut method, adds three buttons, and sets spacing.",
-      "expectations": [
-        "Uses `flexLayout()` DSL function to create layout",
-        "Calls `horizontal()` or sets `direction = FlexDirection.ROW`",
-        "Creates three buttons inside the flex layout using DSL",
-        "Sets `spacing = \"10px\"` on the FlexLayout",
-        "Does NOT use `new FlexLayout()` constructor",
-        "Imports from `com.webforj.kotlin.dsl.component.layout.flexlayout.flexLayout`"
-      ]
+      "prompt": "Build me an app layout with header slot, navigation drawer slot, and footer slot using Kotlin DSL. The header should have a label saying 'My App'. The drawer should have 3 menu items: Dashboard, Users, Settings. The footer should show copyright text. The main content area should show a welcome label and have a primary action button. Use the correct slot-based DSL functions (headerSlot, drawerSlot, footerSlot).",
+      "expected_output": "Kotlin DSL code using appLayout { } with headerSlot { }, drawerSlot { }, and footerSlot { } DSL functions. Should NOT use appBar, drawer, content, or footer as those are incorrect. The drawer should contain 3 buttons. Content area should have a label and button with ButtonTheme.PRIMARY.",
+      "files": []
     },
     {
       "id": 3,
-      "prompt": "Create an AppLayout with an appBar containing a label 'My Application', a drawer with two navigation buttons 'Home' and 'Settings', and a content area with a welcome label.",
-      "expected_output": "The agent uses the DSL to create an AppLayout with proper hierarchical structure: appBar, drawer (with buttons), and content sections.",
-      "expectations": [
-        "Uses `appLayout()` DSL function",
-        "Creates `appBar { }` block with a label inside",
-        "Creates `drawer { }` block with button components",
-        "Creates `content { }` block with label",
-        "Does NOT use Java constructors for AppLayout or its components",
-        "Follows proper nesting: appLayout contains appBar, drawer, content"
-      ]
+      "prompt": "Create a reusable Kotlin DSL component called `labeledTextField` that combines a label and text field in a column layout. The function should be an extension on HasComponents, use @WebforjDsl annotation, and return a TextField. Then use it to create a form with Email (type EMAIL) and Phone (type TEL) fields. Each field should have appropriate placeholders and validation (isRequired = true).",
+      "expected_output": "Kotlin DSL code that defines a custom labeledTextField function using @WebforjDsl annotation, as an extension function on HasComponents, returning TextField. Uses flexLayout(FlexDirection.COLUMN) internally. Then uses it to create a form with two fields with proper type settings and validation.",
+      "files": []
     },
     {
       "id": 4,
-      "prompt": "Create a textField with label 'Email', set placeholder to 'Enter your email', and make it required. Add a blur event handler that validates the email format.",
-      "expected_output": "The agent creates a textField using DSL with label, placeholder, and required properties, then adds an onBlur handler for validation.",
-      "expectations": [
-        "Uses `textField(\"Email\")` DSL function",
-        "Sets `placeholder = \"Enter your email\"` inside the initialization block",
-        "Sets `isRequired = true` property",
-        "Adds `onBlur` handler with validation logic",
-        "Does NOT use `new TextField()` constructor",
-        "Imports from appropriate DSL package"
-      ]
+      "prompt": "Create a button with icon slots using Kotlin DSL. The button should say 'Notifications' and have a badge in the suffix slot showing '5'. Also add a user icon in the prefix slot. Use the prefixSlot { } and suffixSlot { } DSL functions.",
+      "expected_output": "Kotlin DSL code using button { } with prefixSlot { } containing an icon, and suffixSlot { } containing a badge with text '5' and BadgeTheme.DANGER. Should demonstrate proper slot usage patterns.",
+      "files": []
     },
     {
       "id": 5,
-      "prompt": "Create a reusable DSL function called `labeledTextField` that takes a label text and returns a configured TextField with that label. Show how to use it to create an 'Username' field.",
-      "expected_output": "The agent creates an extension function on HasComponents that returns a TextField with the given label, and demonstrates usage.",
-      "expectations": [
-        "Defines function `fun @WebforjDsl HasComponents.labeledTextField(...)`",
-        "Returns a TextField created via DSL",
-        "Sets the label property on the TextField",
-        "Accepts optional initialization block for additional configuration",
-        "Demonstrates usage with `labeledTextField(\"Username\")`",
-        "Uses proper @WebforjDsl receiver type"
-      ]
-    },
-    {
-      "id": 6,
-      "prompt": "Create a form using the Kotlin DSL that uses BindingContext to bind to a User data class with properties 'name' and 'email'. Include textFields for both fields and a submit button.",
-      "expected_output": "The agent creates a view that uses BindingContext.of() for auto-binding UI fields to a User bean, following the webforj-building-forms skill patterns.",
-      "expectations": [
-        "Declares textField properties with names matching User bean properties (name, email)",
-        "Uses `BindingContext.of(this, User::class.java, true)` for auto-bind",
-        "Creates textFields using DSL functions",
-        "Adds a submit button with onClick handler",
-        "Uses BindingContext.read() to load data and write() to save",
-        "Combines Kotlin DSL with BindingContext appropriately"
-      ]
-    },
-    {
-      "id": 7,
-      "prompt": "Create a button with width set to 50%, height to 100px, and font-size to 16px using the DSL CSS unit extensions.",
-      "expected_output": "The agent uses the DSL extension properties like `percent()`, `px()` for setting CSS values.",
-      "expectations": [
-        "Uses `width = 50.percent` or `width = \"50%\"`",
-        "Uses `height = 100.px` or equivalent",
-        "Uses `fontSize = 16.px` or equivalent",
-        "Imports CSS unit extensions from `com.webforj.kotlin.extension`",
-        "Demonstrates Kotlin DSL convenience over raw strings"
-      ]
-    },
-    {
-      "id": 8,
-      "prompt": "Create a button with text 'Settings' that has an icon in the prefix slot (before the text) and a badge with '3' in the suffix slot (after the text).",
-      "expected_output": "The agent creates a button and uses prefixSlot and suffixSlot DSL functions to add icon and badge components.",
-      "expectations": [
-        "Creates button with text 'Settings'",
-        "Uses `prefixSlot { icon(\"settings\") }` or similar to add icon before text",
-        "Uses `suffixSlot { badge(\"3\") }` or similar to add badge after text",
-        "Imports slot functions from DSL packages",
-        "Demonstrates proper slot API usage"
-      ]
-    },
-    {
-      "id": 9,
-      "prompt": "Create a Column layout using ColumnsLayout with three columns. First column should span 2 columns. Add textFields to each column.",
-      "expected_output": "The agent uses ColumnsLayout DSL to create a responsive grid with column spanning.",
-      "expectations": [
-        "Uses `columnsLayout()` DSL function",
-        "Creates `column { }` blocks for each column",
-        "Uses `setSpan(2)` or equivalent on the first column",
-        "Adds textFields inside columns using DSL",
-        "Does NOT use `new ColumnsLayout()` constructor",
-        "Shows understanding of responsive grid layout"
-      ]
-    },
-    {
-      "id": 10,
-      "prompt": "Create a ComboBox with options 'Option 1', 'Option 2', 'Option 3' and handle selection change events to update a label with the selected value.",
-      "expected_output": "The agent creates a ComboBox using DSL, populates it with items, and adds an event handler for selection changes.",
-      "expectations": [
-        "Uses `comboBox()` DSL function",
-        "Adds options via `items = listOf(...)` or equivalent",
-        "Adds `onSelectionChange` handler with lambda",
-        "Updates a label with the selected value inside the handler",
-        "Does NOT use `new ComboBox()` constructor",
-        "Imports from appropriate DSL package"
-      ]
+      "prompt": "Create a Composite view called UserDashboard that extends Composite<FlexLayout>. Use the `self.build { }` pattern (not self.apply { }) to configure the layout. Add a header with user info, a list of users in a flex layout, and a floating action button. Use proper Kotlin DSL component creation patterns.",
+      "expected_output": "Kotlin DSL code for a Composite view using self.build { } pattern (not apply { }). Should create a FlexLayout with COLUMN direction, containing user info section, a list area with flexLayout, and demonstrate proper DSL component nesting.",
+      "files": []
     }
   ]
 }
